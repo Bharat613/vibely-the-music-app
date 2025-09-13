@@ -13,16 +13,13 @@ const frontendURL = process.env.FRONTEND_URL;
 
 // Correct CORS policy to allow your frontend URL
 const corsOptions = {
-    origin: function (origin, callback) {
-        // Allow requests from no origin (like Postman or curl) and the live frontend URL
-        if (!origin || origin === frontendURL) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    }
+    origin: process.env.FRONTEND_URL, 
+    credentials: true,               
 };
+
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
 app.use(bodyParser.json());
 
 // --- Database Connection ---
