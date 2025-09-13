@@ -1,20 +1,25 @@
+// api/index.js
+
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
-const dotenv = require("dotenv");
 const bcrypt = require("bcryptjs");
+const dotenv = require("dotenv");
+
 dotenv.config();
+
 const app = express();
 
 // --- Middleware and Configuration ---
-const PORT = process.env.PORT || 5000;
+// These values are loaded from your .env file or Vercel environment variables.
 const frontendURL = process.env.FRONTEND_URL;
+const uri = process.env.MONGODB_URI;
 
-// Correct CORS policy to allow your frontend URL
+// Vercel's platform will use this to determine the CORS origin.
 const corsOptions = {
-    origin: process.env.FRONTEND_URL, 
-    credentials: true,               
+    origin: frontendURL,
+    credentials: true,
 };
 
 app.use(cors(corsOptions));
@@ -23,7 +28,6 @@ app.options("*", cors(corsOptions));
 app.use(bodyParser.json());
 
 // --- Database Connection ---
-const uri = process.env.MONGODB_URI;
 mongoose
     .connect(uri)
     .then(() => console.log("MongoDB connected successfully."))
@@ -66,7 +70,6 @@ app.post("/signup", async (req, res) => {
             return res.json({ success: false, msg: "User already exists." });
         }
 
-        // Securely hash the password before saving
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -76,7 +79,7 @@ app.post("/signup", async (req, res) => {
         res.json({ success: true, msg: "Account created successfully! Please log in." });
     } catch (error) {
         console.error("Signup error:", error);
-        res.json({ success: false, msg: "Signup failed." });
+        res.status(500).json({ success: false, msg: "Signup failed." });
     }
 });
 
@@ -89,7 +92,6 @@ app.post("/login", async (req, res) => {
             return res.json({ success: false, msg: "Invalid email or password." });
         }
 
-        // Compare the provided password with the hashed password in the database
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.json({ success: false, msg: "Invalid email or password." });
@@ -98,7 +100,7 @@ app.post("/login", async (req, res) => {
         res.json({ success: true, msg: "Login successful!", user: { email: user.email } });
     } catch (error) {
         console.error("Login error:", error);
-        res.json({ success: false, msg: "Login failed." });
+        res.status(500).json({ success: false, msg: "Login failed." });
     }
 });
 
@@ -142,6 +144,6 @@ app.get("/wishlist/:email", async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+// IMPORTANT: This line is for Vercel.
+// It replaces app.listen() to make it work in a serverless environment.
+module.exports = app;
