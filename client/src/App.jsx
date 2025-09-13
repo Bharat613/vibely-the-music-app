@@ -525,7 +525,7 @@ function App() {
             <div className="controls">
               <button onClick={prevSong}>⏮ Prev</button>
               {isPlaying ? (
-<button onClick={pauseSong}><i className="fa-solid fa-pause"></i> Pause</button>              ) : (
+<button onClick={pauseSong}>⏸ Pause</button>              ) : (
                 <button onClick={playSong}>▶ Play</button>
               )}
               <button onClick={nextSong}>⏭ Next</button>
