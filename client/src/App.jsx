@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import axios from "axios"; // Import axios
-
+import { toast } from "react-toastify";
 // Voice recognition setup
 const SpeechRecognition =
   window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -14,9 +13,6 @@ if (recognition) {
   recognition.interimResults = false;
   recognition.lang = "en-US";
 }
-
-// Configure axios to send cookies with every request
-axios.defaults.withCredentials = true;
 
 function App() {
   // --- Music Player State ---
@@ -47,31 +43,20 @@ function App() {
   const isPlayingRef = useRef(isPlaying);
   const isLoggedInRef = useRef(isLoggedIn);
   const searchContainerRef = useRef(null);
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   // --- API Functions for Authentication ---
-
-  // New useEffect to check login status on app load
-  useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        const response = await axios.get(`${backendUrl}/status`);
-        if (response.data.loggedIn) {
-          setIsLoggedIn(true);
-          setCurrentUser(response.data.user);
-        }
-      } catch (error) {
-        console.error("Error checking status:", error);
-      }
-    };
-    checkStatus();
-  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${backendUrl}/login`, { email, password });
-      const data = response.data;
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
       if (data.success) {
         toast.success(data.msg);
         setIsLoggedIn(true);
@@ -81,19 +66,21 @@ function App() {
       }
     } catch (error) {
       console.error("Login error:", error);
-      if (error.response) {
-        toast.error(error.response.data.msg);
-      } else {
-        toast.error("Failed to connect to server. Please try again.");
-      }
+      toast.error("Failed to connect to server. Please try again.");
     }
   };
 
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${backendUrl}/signup`, { email, password });
-      const data = response.data;
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
       if (data.success) {
         toast.success(data.msg);
         setIsLoginView(true);
@@ -104,40 +91,34 @@ function App() {
       }
     } catch (error) {
       console.error("Signup error:", error);
-      if (error.response) {
-        toast.error(error.response.data.msg);
-      } else {
-        toast.error("Failed to connect to server. Please try again.");
-      }
+      toast.error("Failed to connect to server. Please try again.");
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      const response = await axios.get(`${backendUrl}/logout`);
-      if (response.data.success) {
-        toast.success(response.data.msg);
-        setIsLoggedIn(false);
-        setCurrentUser(null);
-        setSongList([]);
-        setWishlist([]);
-        setShowWishlist(false);
-      } else {
-        toast.error(response.data.msg);
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Failed to logout. Please try again.");
-    }
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+    setSongList([]);
+    setWishlist([]);
+    setShowWishlist(false);
   };
 
   // --- API Functions for Wishlist ---
 
   const addToWishlist = async (song) => {
+    if (!currentUser) {
+      toast.error("Please log in to add to your wishlist.");
+      return;
+    }
     try {
-      // No need to send email, the backend gets it from the session
-      const response = await axios.post(`${backendUrl}/wishlist`, { song });
-      const data = response.data;
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/wishlist`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: currentUser.email, song }),
+      });
+      const data = await response.json();
       if (data.success) {
         toast.success(data.msg);
       } else {
@@ -145,24 +126,17 @@ function App() {
       }
     } catch (error) {
       console.error("Error adding to wishlist:", error);
-      if (error.response && error.response.status === 401) {
-        toast.error("Please log in to add to your wishlist.");
-      } else {
-        toast.error("Could not connect to server.");
-      }
+      toast.error("Could not connect to server.");
     }
   };
 
   const fetchWishlist = async () => {
-    // Check login status before fetching
-    if (!isLoggedIn) {
-      toast.error("Please log in to view your wishlist.");
-      return;
-    }
+    if (!currentUser) return;
     try {
-      // No need to send email in the URL
-      const response = await axios.get(`${backendUrl}/wishlist`);
-      const data = response.data;
+      const response = await fetch(
+        `${import.meta.env.VITE_BACKEND_URL}/wishlist/${currentUser.email}`
+      );
+      const data = await response.json();
       if (data.success) {
         setWishlist(data.wishlist);
         setShowWishlist(true);
@@ -171,19 +145,11 @@ function App() {
       }
     } catch (error) {
       console.error("Error fetching wishlist:", error);
-      if (error.response && error.response.status === 401) {
-        // Handle case where session has expired
-        toast.error("Session expired. Please log in again.");
-        setIsLoggedIn(false);
-        setCurrentUser(null);
-      } else {
-        toast.error("Could not connect to server.");
-      }
+      toast.error("Could not connect to server.");
     }
   };
 
   // --- All other existing functions and effects remain the same ---
-  // (You can leave these as they are, no changes needed)
 
   useEffect(() => {
     const setViewportHeight = () => {
@@ -413,6 +379,7 @@ function App() {
 
   return (
     <>
+    
       <ToastContainer
         position="top-right"
         autoClose={2000}
@@ -558,8 +525,7 @@ function App() {
             <div className="controls">
               <button onClick={prevSong}>⏮ Prev</button>
               {isPlaying ? (
-                <button onClick={pauseSong}>⏸ Pause</button>
-              ) : (
+<button onClick={pauseSong}>⏸ Pause</button>              ) : (
                 <button onClick={playSong}>▶ Play</button>
               )}
               <button onClick={nextSong}>⏭ Next</button>
@@ -590,8 +556,8 @@ function App() {
             <span className="listening-text">I am listening...</span>
             <button style={{margin:"20px"}} onClick={fetchWishlist} className="auth-button wishlist2">
                 Show Wishlist
-            </button>
-            <button onClick={handleLogout} className="auth-button logout-button">
+              </button>
+              <button onClick={handleLogout} className="auth-button logout-button">
               Logout
             </button>
           </div>
