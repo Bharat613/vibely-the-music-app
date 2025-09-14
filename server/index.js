@@ -28,7 +28,6 @@ const SongSchema = new mongoose.Schema({
     album: { type: String, required: false }
 });
 
-// Update the User Schema to include a 'recentlyPlayed' array
 const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -36,43 +35,30 @@ const UserSchema = new mongoose.Schema({
         name: { type: String, required: true },
         songs: [SongSchema]
     }],
-    recentlyPlayed: [SongSchema] // <-- NEW FIELD
+    recentlyPlayed: [SongSchema]
 });
 
 const User = mongoose.model('User', UserSchema);
 
 // User Authentication
-app.post('/signup', async (req, res) => {
+app.post('/api/signup', async (req, res) => {
     try {
         const { email, password } = req.body;
-
-        // Step 1: Check if the user already exists first
         const existingUser = await User.findOne({ email });
-
         if (existingUser) {
-            // If the user is found, send a specific error message
-            // and return to prevent further execution.
             return res.status(409).json({ success: false, msg: "User with this email already exists." });
         }
-
-        // Step 2: Hash the password and create the new user
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({ email, password: hashedPassword });
-
-        // Step 3: Save the new user to the database
         await newUser.save();
-
-        // Step 4: Send a success response
         res.status(201).json({ success: true, msg: "Account created successfully! Please log in." });
-
     } catch (err) {
-        // This catch block will only handle other, unexpected errors.
         console.error("Error during user registration:", err);
         res.status(500).json({ success: false, msg: "An unexpected error occurred. Please try again later." });
     }
 });
 
-app.post('/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
@@ -91,7 +77,7 @@ app.post('/login', async (req, res) => {
 });
 
 // Playlist Management
-app.get('/playlists/:email', async (req, res) => {
+app.get('/api/playlists/:email', async (req, res) => {
     try {
         const { email } = req.params;
         const user = await User.findOne({ email });
@@ -104,7 +90,7 @@ app.get('/playlists/:email', async (req, res) => {
     }
 });
 
-app.post('/playlists', async (req, res) => {
+app.post('/api/playlists', async (req, res) => {
     try {
         const { email, playlistName, song } = req.body;
         const user = await User.findOne({ email });
@@ -128,65 +114,47 @@ app.post('/playlists', async (req, res) => {
         res.status(500).json({ success: false, msg: "Error adding song to playlist." });
     }
 });
-// server/index.js
 
-// ... (existing imports and setup code) ...
-
-// --- NEW API ENDPOINT FOR CREATING PLAYLISTS ---
-app.post('/playlists/create', async (req, res) => {
+app.post('/api/playlists/create', async (req, res) => {
     try {
         const { email, playlistName } = req.body;
-
         if (!playlistName) {
             return res.status(400).json({ success: false, msg: "Playlist name is required." });
         }
-
         const user = await User.findOne({ email });
-
         if (!user) {
             return res.status(404).json({ success: false, msg: "User not found." });
         }
-
         const playlistExists = user.playlists.some(p => p.name === playlistName);
         if (playlistExists) {
             return res.status(409).json({ success: false, msg: "A playlist with this name already exists." });
         }
-
         user.playlists.push({ name: playlistName, songs: [] });
         await user.save();
-
         res.status(201).json({ success: true, msg: "Playlist created successfully!" });
-
     } catch (err) {
         console.error("Error creating playlist:", err);
         res.status(500).json({ success: false, msg: "Server error." });
     }
 });
-// Delete an entire playlist by name
-app.delete('/playlists/delete', async (req, res) => {
+
+// Corrected DELETE route for deleting a whole playlist
+app.delete('/api/playlists/delete', async (req, res) => {
     try {
         const { email, playlistName } = req.body;
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({ success: false, msg: "User not found." });
         }
-
-        // Prevent deleting Liked Songs
         if (playlistName === "Liked Songs") {
             return res.status(400).json({ success: false, msg: "You cannot delete the Liked Songs playlist." });
         }
-
-        // Filter out the playlist
         const newPlaylists = user.playlists.filter(p => p.name !== playlistName);
-
-        // Check if any playlist was removed
         if (newPlaylists.length === user.playlists.length) {
             return res.status(404).json({ success: false, msg: "Playlist not found." });
         }
-
         user.playlists = newPlaylists;
         await user.save();
-
         res.status(200).json({ success: true, msg: "Playlist deleted successfully!" });
     } catch (err) {
         console.error("Error deleting playlist:", err);
@@ -194,10 +162,8 @@ app.delete('/playlists/delete', async (req, res) => {
     }
 });
 
-// --- NEW API ENDPOINTS FOR RECENTLY PLAYED SONGS ---
-
-// Endpoint to get a user's recently played songs
-app.get('/recently-played/:email', async (req, res) => {
+// API ENDPOINTS FOR RECENTLY PLAYED SONGS
+app.get('/api/recently-played/:email', async (req, res) => {
     try {
         const { email } = req.params;
         const user = await User.findOne({ email });
@@ -210,50 +176,37 @@ app.get('/recently-played/:email', async (req, res) => {
     }
 });
 
-// Endpoint to add a new song to the user's recently played list
-// server/index.js
-
-app.post('/recently-played', async (req, res) => {
+app.post('/api/recently-played', async (req, res) => {
     try {
         const { email, song } = req.body;
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({ success: false, msg: "User not found." });
         }
-        
-        // Remove the song if it already exists in the list to move it to the front
         const filteredSongs = user.recentlyPlayed.filter(s => s.url !== song.url);
-        
-        // Add the new song to the beginning of the array
         filteredSongs.unshift(song);
-        
-        // Keep only the first 8 songs
         user.recentlyPlayed = filteredSongs.slice(0, 11);
-        
         await user.save();
         res.status(200).json({ success: true, recentlyPlayed: user.recentlyPlayed });
     } catch (err) {
-        // --- IMPORTANT CHANGE: Log the error to the console for debugging ---
         console.error("Error saving recently played song:", err.message);
         res.status(500).json({ success: false, msg: "Error saving recently played song." });
     }
 });
-app.delete('/playlists', async (req, res) => {
+
+// Corrected DELETE route for removing a song from a playlist
+app.delete('/api/playlists', async (req, res) => {
     try {
         const { email, playlistName, song } = req.body;
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({ success: false, msg: "User not found." });
         }
-        
         const playlist = user.playlists.find(p => p.name === playlistName);
         if (!playlist) {
             return res.status(404).json({ success: false, msg: "Playlist not found." });
         }
-
-        // Filter out the song to be removed
         playlist.songs = playlist.songs.filter(s => s.url !== song.url);
-        
         await user.save();
         res.status(200).json({ success: true, msg: "Song removed from playlist." });
     } catch (err) {
@@ -261,4 +214,5 @@ app.delete('/playlists', async (req, res) => {
         res.status(500).json({ success: false, msg: "Error removing song." });
     }
 });
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
