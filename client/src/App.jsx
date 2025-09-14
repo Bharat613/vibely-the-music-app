@@ -4,7 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Cookies from "js-cookie";
 import { FaSearch, FaTrash } from "react-icons/fa";
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 import Auth from "./components/Auth";
 import Home from "./components/Home";
 import Player from "./components/Player";
@@ -80,7 +80,7 @@ function AppContent() {
       toast.error("No song selected to share.");
       return;
     }
-    const shareableUrl = `${window.location.origin}/?songTitle=${encodeURIComponent(song.title)}&artist=${encodeURIComponent(song.artist)}`;
+    const shareableUrl = `${window.location.origin}/?songTitle=${encodeURIComponent(song.title)}&artist=${encodeURIComponent(song.artist || '')}`;
     const shareData = {
       title: `Listen to "${song.title}" by ${song.artist} on Vibely!`,
       text: `Hey, check out this amazing song! "${song.title}" by ${song.artist}.`,
@@ -297,7 +297,6 @@ function AppContent() {
       const data = await response.json();
       if (data.success) {
         toast.success(data.msg);
-        // FIX: Update playlists and selectedPlaylist state directly
         setPlaylists(prevPlaylists => {
           const updatedPlaylists = prevPlaylists.map(playlist => {
             if (playlist.name === playlistName) {
@@ -309,7 +308,6 @@ function AppContent() {
             return playlist;
           });
           
-          // Update selectedPlaylist if it's the one being modified
           setSelectedPlaylist(currentSelected => {
             if (currentSelected?.name === playlistName) {
               const updatedPlaylist = updatedPlaylists.find(p => p.name === playlistName);
@@ -572,67 +570,72 @@ function AppContent() {
             handleSignup={handleSignup}
           />
         } />
-        {isLoggedIn && (
-          <Route path="/" element={
-            <>
-              <div className="top-bar">
-                <div className="search-container" ref={searchContainerRef}>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (songName) fetchSong(songName);
-                    }}
-                  >
-                    <input
-                      type="text"
-                      value={songName}
-                      onChange={handleInputChange}
-                      onFocus={() => {
-                        if (suggestions.length > 0 || songName.length > 2) {
-                          handleInputChange({ target: { value: songName } });
-                        }
+        <Route
+          path="/"
+          element={
+            isLoggedIn ? (
+              <>
+                <div className="top-bar">
+                  <div className="search-container" ref={searchContainerRef}>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (songName) fetchSong(songName);
                       }}
-                      placeholder="Search songs..."
-                    />
-                    <button className="search-button" type="submit">
-                      <FaSearch />
-                    </button>
-                  </form>
-                  {suggestions.length > 0 && (
-                    <ul className="suggestions">
-                      {suggestions.map((s, i) => (
-                        <li key={i} onClick={() => {
-                          setSongName(s.title);
-                          fetchSong(s.title);
-                          setSuggestions([]);
+                    >
+                      <input
+                        type="text"
+                        value={songName}
+                        onChange={handleInputChange}
+                        onFocus={() => {
+                          if (suggestions.length > 0 || songName.length > 2) {
+                            handleInputChange({ target: { value: songName } });
+                          }
                         }}
-                        >
-                          {s.title}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                        placeholder="Search songs..."
+                      />
+                      <button className="search-button" type="submit">
+                        <FaSearch />
+                      </button>
+                    </form>
+                    {suggestions.length > 0 && (
+                      <ul className="suggestions">
+                        {suggestions.map((s, i) => (
+                          <li key={i} onClick={() => {
+                            setSongName(s.title);
+                            fetchSong(s.title);
+                            setSuggestions([]);
+                          }}
+                          >
+                            {s.title}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <button onClick={handleLogout} className="auth-button logout-button">
+                    Logout
+                  </button>
                 </div>
-                <button onClick={handleLogout} className="auth-button logout-button">
-                  Logout
-                </button>
-              </div>
-              <div className="main-content">
-                <Home
-                  recentSongs={recentlyPlayed}
-                  playlists={playlists}
-                  playFromList={playFromList}
-                  onPlaylistClick={(playlist) => {
-                    setSelectedPlaylist(playlist);
-                    navigate("/playlist");
-                  }}
-                  onDeletePlaylist={handleDeletePlaylist}
-                  trendingSongs={trendingSongs}
-                />
-              </div>
-            </>
-          } />
-        )}
+                <div className="main-content">
+                  <Home
+                    recentSongs={recentlyPlayed}
+                    playlists={playlists}
+                    playFromList={playFromList}
+                    onPlaylistClick={(playlist) => {
+                      setSelectedPlaylist(playlist);
+                      navigate("/playlist");
+                    }}
+                    onDeletePlaylist={handleDeletePlaylist}
+                    trendingSongs={trendingSongs}
+                  />
+                </div>
+              </>
+            ) : (
+              <Navigate to="/auth" replace />
+            )
+          }
+        />
         <Route path="/player" element={
           songList.length > 0 ? (
             <Player
