@@ -128,6 +128,40 @@ app.post('/playlists', async (req, res) => {
         res.status(500).json({ success: false, msg: "Error adding song to playlist." });
     }
 });
+// server/index.js
+
+// ... (existing imports and setup code) ...
+
+// --- NEW API ENDPOINT FOR CREATING PLAYLISTS ---
+app.post('/playlists/create', async (req, res) => {
+    try {
+        const { email, playlistName } = req.body;
+
+        if (!playlistName) {
+            return res.status(400).json({ success: false, msg: "Playlist name is required." });
+        }
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found." });
+        }
+
+        const playlistExists = user.playlists.some(p => p.name === playlistName);
+        if (playlistExists) {
+            return res.status(409).json({ success: false, msg: "A playlist with this name already exists." });
+        }
+
+        user.playlists.push({ name: playlistName, songs: [] });
+        await user.save();
+
+        res.status(201).json({ success: true, msg: "Playlist created successfully!" });
+
+    } catch (err) {
+        console.error("Error creating playlist:", err);
+        res.status(500).json({ success: false, msg: "Server error." });
+    }
+});
 // Delete an entire playlist by name
 app.delete('/playlists/delete', async (req, res) => {
     try {
