@@ -659,10 +659,11 @@ function AppContent() {
               showHomeButton={true}
             />
           ) : (
-            <div className="no-song-container">
-              <p>No song is currently playing. Search for a song to begin.</p>
-              <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
-            </div>
+            // <div className="no-song-container">
+            //   <p>No song is currently playing. Search for a song to begin.</p>
+            //   <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
+            // </div>
+            null
           )
         } />
         <Route path="/playlist" element={
