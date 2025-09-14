@@ -1,0 +1,115 @@
+.playlist-list-container {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr); /* 2 cards per row */
+  gap: 1rem;
+  justify-items: center;
+}
+
+/* Playlist Card */
+.playlist-card {
+  position: relative; /* for delete button */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background-color: var(--secondary-bg);
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color 0.2s;
+  width: 160px; /* base size */
+}
+
+.playlist-card:hover {
+  background-color: var(--tertiary-bg);
+}
+
+.playlist-card-image {
+  width: 130px;
+  height: 130px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #5038A6;
+  margin-bottom: 1rem;
+}
+
+.playlist-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.playlist-card-image svg {
+  width: 50%;
+  height: 50%;
+  color: var(--text-color);
+}
+
+.playlist-card-info h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+}
+
+.playlist-card-info p {
+  font-size: 0.85rem;
+  color: var(--subtle-text);
+  margin: 0.25rem 0 0;
+}
+
+/* Delete button */
+.delete-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: transparent;
+  border: none;
+  color: var(--subtle-text);
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 4px;
+}
+
+.delete-btn:hover {
+  color: #ff4d4d; /* red highlight */
+}
+
+/* Mobile (1 per row, smaller cards) */
+@media (max-width: 768px) {
+  .playlist-list-container {
+    grid-template-columns: 1fr 1fr;
+  }
+  .playlist-card {
+    width: 140px;
+  }
+  .playlist-card-image {
+    width: 110px;
+    height: 110px;
+  }
+  .playlist-card-info h4 {
+    max-width: 110px;
+  }
+}
+
+/* Desktop (≥1024px: bigger cards, side by side) */
+@media (min-width: 1024px) {
+  .playlist-card {
+    width: 200px;
+  }
+  .playlist-card-image {
+    width: 170px;
+    height: 170px;
+  }
+  .playlist-card-info h4 {
+    max-width: 160px;
+  }
+}
+

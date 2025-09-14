@@ -1,0 +1,119 @@
+.playlist-selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.playlist-selector-modal {
+  background-color: var(--secondary-bg);
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: var(--subtle-text);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.selector-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.new-list-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.new-list-form input {
+  flex-grow: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 50px;
+  border: 1px solid var(--dark-gray);
+  background-color: var(--tertiary-bg);
+  color: var(--text-color);
+}
+
+.new-list-form button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 50px;
+  background-color: var(--accent-color);
+  color: var(--text-color);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.playlists-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.playlist-item-button {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: var(--tertiary-bg);
+  color: var(--text-color);
+  border: none;
+  border-radius: var(--border-radius);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.playlist-item-button:hover {
+  background-color: var(--dark-gray);
+}
+
+/* * Mobile-specific styling using a media query
+ */
+@media (max-width: 600px) {
+  .playlist-selector-modal {
+    padding: 1.5rem;
+    max-height: 90vh;
+    border-radius: 1rem;
+  }
+
+  .selector-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .new-list-form {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .new-list-form input,
+  .new-list-form button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .playlist-item-button {
+    padding: 1rem 0.75rem;
+    font-size: 0.9rem;
+  }
+}
