@@ -45,15 +45,30 @@ const User = mongoose.model('User', UserSchema);
 app.post('/signup', async (req, res) => {
     try {
         const { email, password } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ email, password: hashedPassword });
-        await user.save();
-        res.status(201).json({ success: true, msg: "User registered successfully!" });
-    } catch (err) {
-        if (err.code === 11000) {
-            return res.status(400).json({ success: false, msg: "Email already exists." });
+
+        // Step 1: Check if the user already exists first
+        const existingUser = await User.findOne({ email });
+
+        if (existingUser) {
+            // If the user is found, send a specific error message
+            // and return to prevent further execution.
+            return res.status(409).json({ success: false, msg: "User with this email already exists." });
         }
-        res.status(500).json({ success: false, msg: "Error registering user." });
+
+        // Step 2: Hash the password and create the new user
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new User({ email, password: hashedPassword });
+
+        // Step 3: Save the new user to the database
+        await newUser.save();
+
+        // Step 4: Send a success response
+        res.status(201).json({ success: true, msg: "Account created successfully! Please log in." });
+
+    } catch (err) {
+        // This catch block will only handle other, unexpected errors.
+        console.error("Error during user registration:", err);
+        res.status(500).json({ success: false, msg: "An unexpected error occurred. Please try again later." });
     }
 });
 
