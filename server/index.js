@@ -1,150 +1,215 @@
-const express = require("express");
-const cors = require("cors");
-const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
-const dotenv = require("dotenv");
-const bcrypt = require("bcryptjs");
-dotenv.config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+require('dotenv').config();
+
 const app = express();
-
-// --- Middleware and Configuration ---
 const PORT = process.env.PORT || 5000;
-const frontendURL = process.env.FRONTEND_URL;
 
-// Correct CORS policy to allow your frontend URL
-const corsOptions = {
-    origin: function (origin, callback) {
-        // Allow requests from no origin (like Postman or curl) and the live frontend URL
-        if (!origin || origin === frontendURL) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    }
-};
-app.use(cors(corsOptions));
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(cors());
 
-// --- Database Connection ---
-const uri = process.env.MONGODB_URI;
-mongoose
-    .connect(uri)
-    .then(() => console.log("MongoDB connected successfully."))
-    .catch((err) => console.error("MongoDB connection error:", err));
+mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+.then(() => console.log("MongoDB connected successfully."))
+.catch(err => console.error("MongoDB connection error:", err));
 
-// --- Database Schema ---
-const userSchema = new mongoose.Schema({
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-    },
-    password: {
-        type: String,
-        required: true,
-    },
-    wishlist: [
-        {
-            title: String,
-            artist: String,
-            url: String,
-            image: String,
-        },
-    ],
+// Define the Song Schema for playlists and recently played
+const SongSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    artist: { type: String, required: false },
+    image: { type: String, required: false },
+    url: { type: String, required: false },
+    album: { type: String, required: false }
 });
 
-const User = mongoose.model("User", userSchema);
-
-// --- API Routes ---
-
-app.get('/', (req, res) => {
-    return res.send("Server is Running");
+// Update the User Schema to include a 'recentlyPlayed' array
+const UserSchema = new mongoose.Schema({
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    playlists: [{
+        name: { type: String, required: true },
+        songs: [SongSchema]
+    }],
+    recentlyPlayed: [SongSchema] // <-- NEW FIELD
 });
 
-app.post("/signup", async (req, res) => {
+const User = mongoose.model('User', UserSchema);
+
+// User Authentication
+app.post('/signup', async (req, res) => {
     try {
         const { email, password } = req.body;
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.json({ success: false, msg: "User already exists." });
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = new User({ email, password: hashedPassword });
+        await user.save();
+        res.status(201).json({ success: true, msg: "User registered successfully!" });
+    } catch (err) {
+        if (err.code === 11000) {
+            return res.status(400).json({ success: false, msg: "Email already exists." });
         }
-
-        // Securely hash the password before saving
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        const newUser = new User({ email, password: hashedPassword });
-        await newUser.save();
-
-        res.json({ success: true, msg: "Account created successfully! Please log in." });
-    } catch (error) {
-        console.error("Signup error:", error);
-        res.json({ success: false, msg: "Signup failed." });
+        res.status(500).json({ success: false, msg: "Error registering user." });
     }
 });
 
-app.post("/login", async (req, res) => {
+app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        
         const user = await User.findOne({ email });
         if (!user) {
-            return res.json({ success: false, msg: "Invalid email or password." });
+            return res.status(400).json({ success: false, msg: "Invalid credentials." });
         }
-
-        // Compare the provided password with the hashed password in the database
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.json({ success: false, msg: "Invalid email or password." });
+            return res.status(400).json({ success: false, msg: "Invalid credentials." });
         }
-
-        res.json({ success: true, msg: "Login successful!", user: { email: user.email } });
-    } catch (error) {
-        console.error("Login error:", error);
-        res.json({ success: false, msg: "Login failed." });
-    }
-});
-
-app.post("/wishlist", async (req, res) => {
-    try {
-        const { email, song } = req.body;
-        const user = await User.findOne({ email });
-
-        if (!user) {
-            return res.json({ success: false, msg: "User not found." });
-        }
-
-        const isAlreadyInWishlist = user.wishlist.some(
-            (item) => item.title === song.title && item.artist === song.artist
-        );
-
-        if (isAlreadyInWishlist) {
-            return res.json({ success: false, msg: "Song is already in your wishlist." });
-        }
-
-        user.wishlist.push(song);
-        await user.save();
-        res.json({ success: true, msg: "Song added to wishlist!" });
-    } catch (error) {
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.status(200).json({ success: true, msg: "Logged in successfully!", token, user: { email: user.email } });
+    } catch (err) {
         res.status(500).json({ success: false, msg: "Server error." });
     }
 });
 
-app.get("/wishlist/:email", async (req, res) => {
+// Playlist Management
+app.get('/playlists/:email', async (req, res) => {
     try {
         const { email } = req.params;
         const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found." });
+        }
+        res.status(200).json({ success: true, playlists: user.playlists });
+    } catch (err) {
+        res.status(500).json({ success: false, msg: "Error fetching playlists." });
+    }
+});
 
+app.post('/playlists', async (req, res) => {
+    try {
+        const { email, playlistName, song } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found." });
+        }
+        let playlist = user.playlists.find(p => p.name === playlistName);
+        if (!playlist) {
+            playlist = { name: playlistName, songs: [] };
+            user.playlists.push(playlist);
+        }
+        const songExists = playlist.songs.some(s => s.url === song.url);
+        if (!songExists) {
+            playlist.songs.push(song);
+            await user.save();
+            res.status(200).json({ success: true, msg: "Song added to playlist!" });
+        } else {
+            res.status(200).json({ success: false, msg: "Song already in this playlist." });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: "Error adding song to playlist." });
+    }
+});
+// Delete an entire playlist by name
+app.delete('/playlists/delete', async (req, res) => {
+    try {
+        const { email, playlistName } = req.body;
+        const user = await User.findOne({ email });
         if (!user) {
             return res.status(404).json({ success: false, msg: "User not found." });
         }
 
-        res.json({ success: true, wishlist: user.wishlist });
-    } catch (error) {
-        res.status(500).json({ success: false, msg: "Server error." });
+        // Prevent deleting Liked Songs
+        if (playlistName === "Liked Songs") {
+            return res.status(400).json({ success: false, msg: "You cannot delete the Liked Songs playlist." });
+        }
+
+        // Filter out the playlist
+        const newPlaylists = user.playlists.filter(p => p.name !== playlistName);
+
+        // Check if any playlist was removed
+        if (newPlaylists.length === user.playlists.length) {
+            return res.status(404).json({ success: false, msg: "Playlist not found." });
+        }
+
+        user.playlists = newPlaylists;
+        await user.save();
+
+        res.status(200).json({ success: true, msg: "Playlist deleted successfully!" });
+    } catch (err) {
+        console.error("Error deleting playlist:", err);
+        res.status(500).json({ success: false, msg: "Error deleting playlist." });
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+// --- NEW API ENDPOINTS FOR RECENTLY PLAYED SONGS ---
+
+// Endpoint to get a user's recently played songs
+app.get('/recently-played/:email', async (req, res) => {
+    try {
+        const { email } = req.params;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found." });
+        }
+        res.status(200).json({ success: true, recentlyPlayed: user.recentlyPlayed });
+    } catch (err) {
+        res.status(500).json({ success: false, msg: "Error fetching recently played songs." });
+    }
 });
+
+// Endpoint to add a new song to the user's recently played list
+// server/index.js
+
+app.post('/recently-played', async (req, res) => {
+    try {
+        const { email, song } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found." });
+        }
+        
+        // Remove the song if it already exists in the list to move it to the front
+        const filteredSongs = user.recentlyPlayed.filter(s => s.url !== song.url);
+        
+        // Add the new song to the beginning of the array
+        filteredSongs.unshift(song);
+        
+        // Keep only the first 8 songs
+        user.recentlyPlayed = filteredSongs.slice(0, 11);
+        
+        await user.save();
+        res.status(200).json({ success: true, recentlyPlayed: user.recentlyPlayed });
+    } catch (err) {
+        // --- IMPORTANT CHANGE: Log the error to the console for debugging ---
+        console.error("Error saving recently played song:", err.message);
+        res.status(500).json({ success: false, msg: "Error saving recently played song." });
+    }
+});
+app.delete('/playlists', async (req, res) => {
+    try {
+        const { email, playlistName, song } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found." });
+        }
+        
+        const playlist = user.playlists.find(p => p.name === playlistName);
+        if (!playlist) {
+            return res.status(404).json({ success: false, msg: "Playlist not found." });
+        }
+
+        // Filter out the song to be removed
+        playlist.songs = playlist.songs.filter(s => s.url !== song.url);
+        
+        await user.save();
+        res.status(200).json({ success: true, msg: "Song removed from playlist." });
+    } catch (err) {
+        console.error("Error removing song from playlist:", err);
+        res.status(500).json({ success: false, msg: "Error removing song." });
+    }
+});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
