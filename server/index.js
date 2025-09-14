@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const path = require('path'); // <-- ADDED: The 'path' module is needed for file paths
 
 require('dotenv').config();
 
@@ -37,7 +36,7 @@ const UserSchema = new mongoose.Schema({
         name: { type: String, required: true },
         songs: [SongSchema]
     }],
-    recentlyPlayed: [SongSchema]
+    recentlyPlayed: [SongSchema] // <-- NEW FIELD
 });
 
 const User = mongoose.model('User', UserSchema);
@@ -46,15 +45,28 @@ const User = mongoose.model('User', UserSchema);
 app.post('/signup', async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        // Step 1: Check if the user already exists first
         const existingUser = await User.findOne({ email });
+
         if (existingUser) {
+            // If the user is found, send a specific error message
+            // and return to prevent further execution.
             return res.status(409).json({ success: false, msg: "User with this email already exists." });
         }
+
+        // Step 2: Hash the password and create the new user
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({ email, password: hashedPassword });
+
+        // Step 3: Save the new user to the database
         await newUser.save();
+
+        // Step 4: Send a success response
         res.status(201).json({ success: true, msg: "Account created successfully! Please log in." });
+
     } catch (err) {
+        // This catch block will only handle other, unexpected errors.
         console.error("Error during user registration:", err);
         res.status(500).json({ success: false, msg: "An unexpected error occurred. Please try again later." });
     }
@@ -116,8 +128,11 @@ app.post('/playlists', async (req, res) => {
         res.status(500).json({ success: false, msg: "Error adding song to playlist." });
     }
 });
+// server/index.js
 
-// NEW API ENDPOINT FOR CREATING PLAYLISTS
+// ... (existing imports and setup code) ...
+
+// --- NEW API ENDPOINT FOR CREATING PLAYLISTS ---
 app.post('/playlists/create', async (req, res) => {
     try {
         const { email, playlistName } = req.body;
@@ -147,7 +162,6 @@ app.post('/playlists/create', async (req, res) => {
         res.status(500).json({ success: false, msg: "Server error." });
     }
 });
-
 // Delete an entire playlist by name
 app.delete('/playlists/delete', async (req, res) => {
     try {
@@ -157,12 +171,15 @@ app.delete('/playlists/delete', async (req, res) => {
             return res.status(404).json({ success: false, msg: "User not found." });
         }
 
+        // Prevent deleting Liked Songs
         if (playlistName === "Liked Songs") {
             return res.status(400).json({ success: false, msg: "You cannot delete the Liked Songs playlist." });
         }
 
+        // Filter out the playlist
         const newPlaylists = user.playlists.filter(p => p.name !== playlistName);
 
+        // Check if any playlist was removed
         if (newPlaylists.length === user.playlists.length) {
             return res.status(404).json({ success: false, msg: "Playlist not found." });
         }
@@ -177,7 +194,9 @@ app.delete('/playlists/delete', async (req, res) => {
     }
 });
 
-// NEW API ENDPOINTS FOR RECENTLY PLAYED SONGS
+// --- NEW API ENDPOINTS FOR RECENTLY PLAYED SONGS ---
+
+// Endpoint to get a user's recently played songs
 app.get('/recently-played/:email', async (req, res) => {
     try {
         const { email } = req.params;
@@ -191,6 +210,9 @@ app.get('/recently-played/:email', async (req, res) => {
     }
 });
 
+// Endpoint to add a new song to the user's recently played list
+// server/index.js
+
 app.post('/recently-played', async (req, res) => {
     try {
         const { email, song } = req.body;
@@ -199,20 +221,23 @@ app.post('/recently-played', async (req, res) => {
             return res.status(404).json({ success: false, msg: "User not found." });
         }
         
+        // Remove the song if it already exists in the list to move it to the front
         const filteredSongs = user.recentlyPlayed.filter(s => s.url !== song.url);
         
+        // Add the new song to the beginning of the array
         filteredSongs.unshift(song);
         
+        // Keep only the first 8 songs
         user.recentlyPlayed = filteredSongs.slice(0, 11);
         
         await user.save();
         res.status(200).json({ success: true, recentlyPlayed: user.recentlyPlayed });
     } catch (err) {
+        // --- IMPORTANT CHANGE: Log the error to the console for debugging ---
         console.error("Error saving recently played song:", err.message);
         res.status(500).json({ success: false, msg: "Error saving recently played song." });
     }
 });
-
 app.delete('/playlists', async (req, res) => {
     try {
         const { email, playlistName, song } = req.body;
@@ -226,6 +251,7 @@ app.delete('/playlists', async (req, res) => {
             return res.status(404).json({ success: false, msg: "Playlist not found." });
         }
 
+        // Filter out the song to be removed
         playlist.songs = playlist.songs.filter(s => s.url !== song.url);
         
         await user.save();
@@ -235,12 +261,4 @@ app.delete('/playlists', async (req, res) => {
         res.status(500).json({ success: false, msg: "Error removing song." });
     }
 });
-
-
-app.use(express.static(path.join(__dirname, 'dist')));
-
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
-
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
