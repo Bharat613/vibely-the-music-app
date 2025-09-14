@@ -236,14 +236,9 @@ app.delete('/playlists', async (req, res) => {
     }
 });
 
-// --- NEW CATCH-ALL ROUTES FOR FRONTEND ---
-// These lines MUST be placed after all your API routes.
 
-// Serve the static files from the build/dist directory
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// A catch-all route to serve the index.html file for any client-side routes
-// The '.*' regex fixes the `PathError` you were seeing
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
