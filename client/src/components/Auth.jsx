@@ -26,7 +26,27 @@ const Auth = ({ isLoginView, setIsLoginView, email, setEmail, password, setPassw
             className="auth-button switchbutton"
             type="button"
           >
-            {isLoginView ? "Don't have an account? Sign Up" : "Already have an account? Login"}
+{isLoginView ? (
+  <p>
+    Don’t have an account?{" "}
+    <span
+      onClick={() => setIsLoginView(false)}
+      style={{ color: "var(--accent-color)", cursor: "pointer" }}
+    >
+      Sign Up
+    </span>
+  </p>
+) : (
+  <p>
+    Already have an account?{" "}
+    <span
+      onClick={() => setIsLoginView(true)}
+      style={{ color: "var(--accent-color)", cursor: "pointer" }}
+    >
+      Login
+    </span>
+  </p>
+)}
           </button>
         </form>
       </div>

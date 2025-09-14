@@ -495,6 +495,7 @@ body {
   justify-content: center;
   height: 100%;
   text-align: center;
+  
 }
 
 .auth-form {
@@ -503,6 +504,33 @@ body {
   border-radius: var(--border-radius);
   width: 90%;
   max-width: 400px;
+  /* Initial shadow color */
+  box-shadow: 0 0 60px -10px #1DB954;
+  /* Add the animation */
+  animation: neon-glow 5s linear infinite;
+}
+
+@keyframes neon-glow {
+  0% {
+    /* Start with the green glow */
+    box-shadow: 0 0 60px -10px #1DB954;
+  }
+  25% {
+    /* Transition to a slightly different hue */
+    box-shadow: 0 0 60px -10px #0f7a36;
+  }
+  50% {
+    /* Transition to another hue */
+    box-shadow: 0 0 60px -10px #1DB954;
+  }
+  75% {
+    /* Transition to a different hue */
+    box-shadow: 0 0 60px -10px #0f7a36;
+  }
+  100% {
+    /* Back to the original color, completing the loop */
+    box-shadow: 0 0 60px -10px #1DB954;
+  }
 }
 
 .auth-form h2 {
