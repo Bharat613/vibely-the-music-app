@@ -1,7 +1,8 @@
 // client/src/components/Player.jsx
 
 import React from "react";
-import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaHome } from "react-icons/fa";
+// ADDED FaShareAlt to the imports
+import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaHome, FaHeart, FaShareAlt } from "react-icons/fa";
 
 const Player = ({
   audioRef,
@@ -17,10 +18,13 @@ const Player = ({
   nextSong,
   handleSongEnd,
   updateTime,
-  onAddToListClick, // Updated prop name
+  onAddToListClick,
+  onAddToLikedSongsClick,
+  onShareClick, // ADDED: New prop for the share function
   setActiveView,
   showHomeButton,
 }) => {
+  
   return (
     <div className="player-container">
       {showHomeButton && (
@@ -30,11 +34,32 @@ const Player = ({
       )}
       <div className="player-content">
         <img src={currentSong?.image || "/veebly.png"} alt="Album Art" className="player-album-image" />
+        {/* ADDED SHARE AND LIKE BUTTONS WRAPPER */}
+        <div className="player-top-buttons">
+          {/* UPDATED: Changed class to 'share-button' for clarity */}
+          <button 
+            onClick={() => onShareClick(currentSong)} 
+            className="player-button share-button"
+            title="Share Song"
+          >
+            <FaShareAlt size={20} />
+          </button>
+          {/* UPDATED: Changed class to 'like-button' for clarity */}
+          <button 
+            onClick={() => onAddToLikedSongsClick(currentSong)} 
+            className="player-button like-button"
+            title="Add to Liked Songs"
+          >
+            <FaHeart size={20} />
+          </button>
+        </div>
+        
         <div className="player-info">
           <h2 className="player-song-title">{currentSong?.title}</h2>
           <h3 className="player-song-artist">{currentSong?.artist}</h3>
           <p className="player-song-album">{currentSong?.album}</p>
         </div>
+        
         <div className="controls-container">
           <input
             type="range"
@@ -61,8 +86,7 @@ const Player = ({
             </button>
           </div>
         </div>
-        
-        <button onClick={onAddToListClick} className="add-to-liked">
+        <button onClick={onAddToListClick} className="add-to-list-btn">
           Add to List
         </button>
       </div>

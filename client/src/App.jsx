@@ -4,6 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Cookies from "js-cookie";
 import { FaSearch, FaTrash } from "react-icons/fa";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import Auth from "./components/Auth";
 import Home from "./components/Home";
 import Player from "./components/Player";
@@ -14,7 +15,10 @@ const SAAVN_API_URL = import.meta.env.VITE_SAAVN_API_URL;
 const ITUNES_API_URL = import.meta.env.VITE_ITUNES_API_URL;
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-function App() {
+function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [songName, setSongName] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [songList, setSongList] = useState([]);
@@ -30,53 +34,83 @@ function App() {
   const [password, setPassword] = useState("");
 
   const [playlists, setPlaylists] = useState([]);
-  const [activeView, setActiveView] = useState("home");
   const [selectedPlaylist, setSelectedPlaylist] = useState(null);
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
-  
+
   const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
 
   const audioRef = useRef(null);
   const searchContainerRef = useRef(null);
 
-  // Hardcoded Trending Songs Data
-  // client/src/App.js
+  const trendingSongs = [
+    {
+      title: 'Kurchi Madathapetti',
+      movie: 'Guntur Kaaram',
+      image: 'https://upload.wikimedia.org/wikipedia/en/5/5e/Kurchi_Madathapetti.jpg',
+      url: import.meta.env.VITE_SONG_URL_KURCHI,
+    },
+    {
+      title: 'Nijame Ne Chebutunna',
+      movie: 'Ooru Peru Bhairavakona',
+      image: 'https://i.scdn.co/image/ab67616d0000b2731e5af7c5265c7ce91982b418',
+      url: import.meta.env.VITE_SONG_URL_NIJAME,
+    },
+    {
+      title: 'Samayama',
+      movie: 'Hi Nanna',
+      image: 'https://c.saavncdn.com/307/Samayama-From-Hi-Nanna-Telugu-2023-20230918164922-500x500.jpg',
+      url: import.meta.env.VITE_SONG_URL_SAMAYAMA,
+    },
+    {
+      title: 'Pushpa Pushpa',
+      movie: 'Pushpa 2: The Rule',
+      image: 'https://c.saavncdn.com/601/Pushpa-Pushpa-From-Pushpa-2-The-Rule-Telugu-Telugu-2024-20240501161044-500x500.jpg',
+      url: import.meta.env.VITE_SONG_URL_PUSHPA,
+    },
+    {
+      title: 'Koyila',
+      movie: '',
+      image: 'https://c.saavncdn.com/957/Koyila-Telugu-2025-20250522020441-500x500.jpg',
+      url: import.meta.env.VITE_SONG_URL_KOYILA,
+    },
+  ];
 
-// ... other imports and state variables ...
+  const handleShareSong = async (song) => {
+    if (!song) {
+      toast.error("No song selected to share.");
+      return;
+    }
+    const shareableUrl = `${window.location.origin}/?songTitle=${encodeURIComponent(song.title)}&artist=${encodeURIComponent(song.artist)}`;
+    const shareData = {
+      title: `Listen to "${song.title}" by ${song.artist} on Vibely!`,
+      text: `Hey, check out this amazing song! "${song.title}" by ${song.artist}.`,
+      url: shareableUrl,
+    };
 
-// Updated Hardcoded Trending Songs Data with URLs from .env
-const trendingSongs = [
-  {
-    title: 'Kurchi Madathapetti',
-    movie: 'Guntur Kaaram',
-    image: 'https://upload.wikimedia.org/wikipedia/en/5/5e/Kurchi_Madathapetti.jpg',
-    url: import.meta.env.VITE_SONG_URL_KURCHI,
-  },
-  {
-    title: 'Nijame Ne Chebutunna',
-    movie: 'Ooru Peru Bhairavakona',
-    image: 'https://i.scdn.co/image/ab67616d0000b2731e5af7c5265c7ce91982b418',
-    url: import.meta.env.VITE_SONG_URL_NIJAME,
-  },
-  {
-    title: 'Samayama',
-    movie: 'Hi Nanna',
-    image: 'https://c.saavncdn.com/307/Samayama-From-Hi-Nanna-Telugu-2023-20230918164922-500x500.jpg',
-    url: import.meta.env.VITE_SONG_URL_SAMAYAMA,
-  },
-  {
-    title: 'Pushpa Pushpa',
-    movie: 'Pushpa 2: The Rule',
-    image: 'https://c.saavncdn.com/601/Pushpa-Pushpa-From-Pushpa-2-The-Rule-Telugu-Telugu-2024-20240501161044-500x500.jpg',
-    url: import.meta.env.VITE_SONG_URL_PUSHPA,
-  },
-  {
-    title: 'Koyila',
-    movie: '',
-    image: 'https://c.saavncdn.com/957/Koyila-Telugu-2025-20250522020441-500x500.jpg',
-    url: import.meta.env.VITE_SONG_URL_KOYILA,
-  },
-];
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setTimeout(() => {
+          toast.success("Song shared successfully!");
+        }, 2000);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        toast.info('Link copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      toast.error('Failed to share.');
+    }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const sharedSongTitle = params.get('songTitle');
+    if (sharedSongTitle) {
+      fetchSong(sharedSongTitle);
+      navigate('/player');
+    }
+  }, [location.search, navigate]);
 
   useEffect(() => {
     const user = Cookies.get("user");
@@ -87,24 +121,18 @@ const trendingSongs = [
       fetchRecentlyPlayedSongs(parsedUser.email);
     }
   }, [isLoggedIn]);
-  
-  // NEW: This effect handles clicks outside the search suggestions
+
   useEffect(() => {
     const handleOutsideClick = (event) => {
-      // Check if the click is outside the search container
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
-        setSuggestions([]); // Hide the suggestions by clearing the list
+        setSuggestions([]);
       }
     };
-
-    // Add the event listener to the document
     document.addEventListener('mousedown', handleOutsideClick);
-
-    // Clean up the event listener when the component unmounts
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, []); // Empty dependency array ensures this runs only once
+  }, []);
 
   const fetchRecentlyPlayedSongs = async (userEmail) => {
     try {
@@ -161,6 +189,7 @@ const trendingSongs = [
         Cookies.set("user", JSON.stringify(data.user), { expires: 7 });
         fetchPlaylists(data.user.email);
         fetchRecentlyPlayedSongs(data.user.email);
+        navigate("/");
       } else {
         toast.error(data.msg);
       }
@@ -198,8 +227,8 @@ const trendingSongs = [
     setPlaylists([]);
     Cookies.remove("userToken");
     Cookies.remove("user");
-    setActiveView("home");
     setRecentlyPlayed([]);
+    navigate("/auth");
   };
 
   const fetchPlaylists = async (userEmail) => {
@@ -208,7 +237,13 @@ const trendingSongs = [
       const response = await fetch(`${BACKEND_URL}/playlists/${userEmail}`);
       const data = await response.json();
       if (data.success) {
-        setPlaylists(data.playlists);
+        let playlistsFromServer = data.playlists;
+        const hasLikedSongs = playlistsFromServer.some(p => p.name === "Liked Songs");
+        if (!hasLikedSongs) {
+          const defaultLikedPlaylist = { name: "Liked Songs", songs: [] };
+          playlistsFromServer = [defaultLikedPlaylist, ...playlistsFromServer];
+        }
+        setPlaylists(playlistsFromServer);
       } else {
         toast.error("Failed to fetch playlists: " + data.msg);
       }
@@ -220,7 +255,7 @@ const trendingSongs = [
   const addSongToPlaylist = async (playlistName, song) => {
     if (!currentUser) {
       toast.error("Please log in to add songs to a playlist.");
-      return;
+      return false;
     }
     try {
       const response = await fetch(`${BACKEND_URL}/playlists`, {
@@ -232,11 +267,15 @@ const trendingSongs = [
       if (data.success) {
         toast.success(data.msg);
         fetchPlaylists(currentUser.email);
+        return true;
       } else {
         toast.error("Failed to add song: " + data.msg);
+        return false;
       }
     } catch (error) {
       console.error("Error adding to playlist:", error);
+      toast.error("Failed to add song. Please try again.");
+      return false;
     }
   };
 
@@ -258,7 +297,29 @@ const trendingSongs = [
       const data = await response.json();
       if (data.success) {
         toast.success(data.msg);
-        fetchPlaylists(currentUser.email);
+        // FIX: Update playlists and selectedPlaylist state directly
+        setPlaylists(prevPlaylists => {
+          const updatedPlaylists = prevPlaylists.map(playlist => {
+            if (playlist.name === playlistName) {
+              const newSongs = playlist.songs.filter(
+                song => song.title !== songToRemove.title || song.artist !== songToRemove.artist
+              );
+              return { ...playlist, songs: newSongs };
+            }
+            return playlist;
+          });
+          
+          // Update selectedPlaylist if it's the one being modified
+          setSelectedPlaylist(currentSelected => {
+            if (currentSelected?.name === playlistName) {
+              const updatedPlaylist = updatedPlaylists.find(p => p.name === playlistName);
+              return updatedPlaylist;
+            }
+            return currentSelected;
+          });
+
+          return updatedPlaylists;
+        });
       } else {
         toast.error("Failed to remove song: " + data.msg);
       }
@@ -295,7 +356,7 @@ const trendingSongs = [
             const img = await fetchSongImage(cleanedTitle, song.primaryArtists);
             return {
               title: cleanedTitle,
-              artist: song.primaryArtists, 
+              artist: song.primaryArtists,
               url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
               image: img,
               album: song.album?.name || "Unknown Album",
@@ -305,7 +366,7 @@ const trendingSongs = [
         setSongList(songs);
         setCurrentSongIndex(0);
         setSuggestions([]);
-        setActiveView("player");
+        navigate("/player");
       } else {
         toast.error("❌ Song not found!");
       }
@@ -327,6 +388,7 @@ const trendingSongs = [
       }
     }
   };
+
   useEffect(() => {
     playNewSong();
   }, [currentSongIndex, songList]);
@@ -352,9 +414,9 @@ const trendingSongs = [
   };
 
   const prevSong = () => setCurrentSongIndex((prev) => (prev - 1 + songList.length) % songList.length);
-  
+
   const handleSongEnd = () => {
-    if (activeView === "playlist" && selectedPlaylist) {
+    if (location.pathname === "/playlist" && selectedPlaylist) {
       const currentPlaylist = playlists.find(p => p.name === selectedPlaylist.name);
       if (currentPlaylist && currentPlaylist.songs.length > 1) {
         const currentSongIndexInPlaylist = currentPlaylist.songs.findIndex(
@@ -411,6 +473,7 @@ const trendingSongs = [
   };
 
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   const handleDeletePlaylist = async (playlistToDelete) => {
     if (!currentUser) {
       toast.error("Please log in to manage playlists.");
@@ -435,7 +498,9 @@ const trendingSongs = [
       const data = await response.json();
       if (data.success) {
         toast.success(data.msg);
-        fetchPlaylists(currentUser.email);
+        setPlaylists(prevPlaylists =>
+          prevPlaylists.filter(p => p.name !== playlistToDelete.name)
+        );
       } else {
         toast.error("Failed to delete playlist: " + data.msg);
       }
@@ -447,147 +512,237 @@ const trendingSongs = [
   const playFromList = (song) => {
     const currentPlaylist = playlists.find(p => p.name === selectedPlaylist?.name);
     if (currentPlaylist) {
-        const songIndex = currentPlaylist.songs.findIndex(
-            (s) => s.title === song.title && s.artist === song.artist
-        );
-        if (songIndex !== -1) {
-            setSongList(currentPlaylist.songs);
-            setCurrentSongIndex(songIndex);
-            setActiveView("player");
-        } else {
-            setSongList([song]);
-            setCurrentSongIndex(0);
-            setActiveView("player");
-        }
-    } else {
+      const songIndex = currentPlaylist.songs.findIndex(
+        (s) => s.title === song.title && s.artist === song.artist
+      );
+      if (songIndex !== -1) {
+        setSongList(currentPlaylist.songs);
+        setCurrentSongIndex(songIndex);
+        navigate("/player");
+      } else {
         setSongList([song]);
         setCurrentSongIndex(0);
-        setActiveView("player");
+        navigate("/player");
+      }
+    } else {
+      setSongList([song]);
+      setCurrentSongIndex(0);
+      navigate("/player");
     }
   };
 
   const handleAddToPlaylistClick = () => {
     if (!currentUser) {
-        toast.error("Please log in to add songs to a playlist.");
-        return;
+      toast.error("Please log in to add songs to a playlist.");
+      return;
     }
     setShowPlaylistSelector(true);
   };
 
-  const handleAddSongToList = (playlistName) => {
+  const handleAddSongToList = async (playlistName) => {
     if (songList.length > 0) {
-      addSongToPlaylist(playlistName, songList[currentSongIndex]);
+      return await addSongToPlaylist(playlistName, songList[currentSongIndex]);
     }
+    return false;
   };
 
-  const handleCreateNewPlaylist = (newPlaylistName) => {
+  const handleCreateNewPlaylist = async (newPlaylistName) => {
     if (songList.length > 0) {
-      addSongToPlaylist(newPlaylistName, songList[currentSongIndex]);
+      return await addSongToPlaylist(newPlaylistName, songList[currentSongIndex]);
     }
+    return false;
   };
 
-  const renderContent = () => {
-    if (!isLoggedIn) {
-      return (
-        <Auth
-          isLoginView={isLoginView}
-          setIsLoginView={setIsLoginView}
-          email={email}
-          setEmail={setEmail}
-          password={password}
-          setPassword={setPassword}
-          handleLogin={handleLogin}
-          handleSignup={handleSignup}
-        />
-      );
-    }
-
-    switch (activeView) {
-      case "player":
-        return songList.length > 0 ? (
-          <Player
-            audioRef={audioRef}
-            currentSong={songList[currentSongIndex]}
-            isPlaying={isPlaying}
-            currentTime={currentTime}
-            duration={duration}
-            progressPercentage={progressPercentage}
-            handleTimeChange={handleTimeChange}
-            playSong={playSong}
-            pauseSong={pauseSong}
-            prevSong={prevSong}
-            nextSong={nextSong}
-            handleSongEnd={handleSongEnd}
-            updateTime={updateTime}
-            onAddToListClick={handleAddToPlaylistClick}
-            setActiveView={setActiveView}
-            showHomeButton={true}
-          />
-        ) : (
-          <Home
-            recentSongs={recentlyPlayed}
-            playlists={playlists}
-            playFromList={playFromList}
-            onPlaylistClick={(playlist) => {
-              setSelectedPlaylist(playlist);
-              setActiveView("playlist");
-            }}
-            onDeletePlaylist={handleDeletePlaylist}
-            trendingSongs={trendingSongs} // <--- Pass the trending songs here
-          />
-        );
-      case "playlist":
-        const currentPlaylist = playlists.find(p => p.name === selectedPlaylist.name);
-        return (
-          <div className="playlist-view">
-            <button className="back-button" onClick={() => setActiveView("home")}>← Back to Home</button>
-            <h2 className="section-title">{currentPlaylist?.name}</h2>
-            <ul className="playlist-list">
-              {currentPlaylist?.songs?.map((song, index) => (
-                <li key={index} className="playlist-item">
-                  <div className="playlist-song-info" onClick={() => {
-                    playFromList(song);
-                    const playlistSongs = playlists.find(p => p.name === selectedPlaylist.name)?.songs || [];
-                    setSongList(playlistSongs);
-                    setCurrentSongIndex(index);
-                    setActiveView("player");
-                  }}>
-                    <img src={song.image} alt={song.title} />
-                    <div className="playlist-info">
-                      <h4>{song.title}</h4>
-                      <p>{song.album}</p>
-                    </div>
-                  </div>
-                  <button
-                    className="remove-song-button"
-                    onClick={() => removeSongFromPlaylist(currentPlaylist.name, song)}
-                  >
-                    <FaTrash />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      default:
-        return (
-          <Home
-            recentSongs={recentlyPlayed}
-            playlists={playlists}
-            playFromList={playFromList}
-            onPlaylistClick={(playlist) => {
-              setSelectedPlaylist(playlist);
-              setActiveView("playlist");
-            }}
-            onDeletePlaylist={handleDeletePlaylist}
-            trendingSongs={trendingSongs} // <--- Pass the trending songs here
-          />
-        );
-    }
+  const onAddToLikedSongsClick = (song) => {
+    addSongToPlaylist("Liked Songs", song);
   };
-
+  
   return (
-    <>
+    <div className="app">
+      <Routes>
+        <Route path="/auth" element={
+          <Auth
+            isLoginView={isLoginView}
+            setIsLoginView={setIsLoginView}
+            email={email}
+            setEmail={setEmail}
+            password={password}
+            setPassword={setPassword}
+            handleLogin={handleLogin}
+            handleSignup={handleSignup}
+          />
+        } />
+        {isLoggedIn && (
+          <Route path="/" element={
+            <>
+              <div className="top-bar">
+                <div className="search-container" ref={searchContainerRef}>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (songName) fetchSong(songName);
+                    }}
+                  >
+                    <input
+                      type="text"
+                      value={songName}
+                      onChange={handleInputChange}
+                      onFocus={() => {
+                        if (suggestions.length > 0 || songName.length > 2) {
+                          handleInputChange({ target: { value: songName } });
+                        }
+                      }}
+                      placeholder="Search songs..."
+                    />
+                    <button className="search-button" type="submit">
+                      <FaSearch />
+                    </button>
+                  </form>
+                  {suggestions.length > 0 && (
+                    <ul className="suggestions">
+                      {suggestions.map((s, i) => (
+                        <li key={i} onClick={() => {
+                          setSongName(s.title);
+                          fetchSong(s.title);
+                          setSuggestions([]);
+                        }}
+                        >
+                          {s.title}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <button onClick={handleLogout} className="auth-button logout-button">
+                  Logout
+                </button>
+              </div>
+              <div className="main-content">
+                <Home
+                  recentSongs={recentlyPlayed}
+                  playlists={playlists}
+                  playFromList={playFromList}
+                  onPlaylistClick={(playlist) => {
+                    setSelectedPlaylist(playlist);
+                    navigate("/playlist");
+                  }}
+                  onDeletePlaylist={handleDeletePlaylist}
+                  trendingSongs={trendingSongs}
+                />
+              </div>
+            </>
+          } />
+        )}
+        <Route path="/player" element={
+          songList.length > 0 ? (
+            <Player
+              audioRef={audioRef}
+              currentSong={songList[currentSongIndex]}
+              isPlaying={isPlaying}
+              currentTime={currentTime}
+              duration={duration}
+              progressPercentage={progressPercentage}
+              handleTimeChange={handleTimeChange}
+              playSong={playSong}
+              pauseSong={pauseSong}
+              prevSong={prevSong}
+              nextSong={nextSong}
+              handleSongEnd={handleSongEnd}
+              updateTime={updateTime}
+              onAddToListClick={handleAddToPlaylistClick}
+              onAddToLikedSongsClick={onAddToLikedSongsClick}
+              onShareClick={handleShareSong}
+              setActiveView={() => navigate("/")}
+              showHomeButton={true}
+            />
+          ) : (
+            <div className="no-song-container">
+              <p>No song is currently playing. Search for a song to begin.</p>
+              <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
+            </div>
+          )
+        } />
+        <Route path="/playlist" element={
+          selectedPlaylist ? (
+            <div className="playlist-view">
+              <button className="back-button" onClick={() => navigate("/")}><i className="fa-solid fa-backward"></i></button>
+              <h2 className="section-title">{selectedPlaylist?.name}</h2>
+              <ul className="playlist-list">
+                {selectedPlaylist?.songs?.map((song, index) => (
+                  <li key={index} className="playlist-item">
+                    <div className="playlist-song-info" onClick={() => {
+                      playFromList(song);
+                      setSongList(selectedPlaylist.songs);
+                      setCurrentSongIndex(index);
+                      navigate("/player");
+                    }}>
+                      <img src={song.image} alt={song.title} />
+                      <div className="playlist-info">
+                        <h4>{song.title}</h4>
+                        <p>{song.album}</p>
+                      </div>
+                    </div>
+                    <button
+                      className="remove-song-button"
+                      onClick={() => removeSongFromPlaylist(selectedPlaylist.name, song)}
+                    >
+                      <FaTrash />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="no-playlist-container">
+                <p>No playlist selected. Please choose a playlist from the home page.</p>
+                <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
+            </div>
+          )
+        } />
+        <Route path="*" element={
+          <div className="not-found-container">
+            <p>404 - Page not found.</p>
+            <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
+          </div>
+        } />
+      </Routes>
+
+      {showPlaylistSelector && (
+        <PlaylistSelector
+          playlists={playlists}
+          onAddToList={handleAddSongToList}
+          onNewList={handleCreateNewPlaylist}
+          onClose={() => setShowPlaylistSelector(false)}
+        />
+      )}
+
+      {songList.length > 0 && (
+        <audio
+          ref={audioRef}
+          src={songList[currentSongIndex]?.url}
+          onPlay={playSong}
+          onPause={pauseSong}
+          onEnded={handleSongEnd}
+          onTimeUpdate={updateTime}
+        />
+      )}
+
+      {isLoggedIn && songList.length > 0 && location.pathname !== "/player" && (
+        <MiniPlayer
+          currentSong={songList[currentSongIndex]}
+          isPlaying={isPlaying}
+          playSong={playSong}
+          pauseSong={pauseSong}
+          setActiveView={() => navigate("/player")}
+        />
+      )}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
       <ToastContainer
         position="top-center"
         autoClose={2000}
@@ -600,87 +755,8 @@ const trendingSongs = [
         toastClassName="vibely-toast"
         progressClassName="vibely-progress"
       />
-      <div className="app">
-        {isLoggedIn && (
-          <div className="top-bar">
-            <div className="search-container" ref={searchContainerRef}>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (songName) fetchSong(songName);
-                }}
-              >
-                <input
-                  type="text"
-                  value={songName}
-                  onChange={handleInputChange}
-                  onFocus={() => {
-                    if (suggestions.length > 0 || songName.length > 2) {
-                       // This will re-trigger the suggestion fetching if a search term is present
-                       handleInputChange({ target: { value: songName } });
-                    }
-                  }}
-                  placeholder="Search songs..."
-                />
-                <button className="search-button" type="submit">
-                  <FaSearch />
-                </button>
-              </form>
-              {suggestions.length > 0 && (
-                <ul className="suggestions">
-                  {suggestions.map((s, i) => (
-                    <li key={i} onClick={() => {
-                        setSongName(s.title);
-                        fetchSong(s.title);
-                        setSuggestions([]); // Immediately clear suggestions on selection
-                      }}
-                    >
-                      {s.title}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <button onClick={handleLogout} className="auth-button logout-button">
-              Logout
-            </button>
-          </div>
-        )}
-        <div className="main-content">
-          {renderContent()}
-        </div>
-
-        {showPlaylistSelector && (
-          <PlaylistSelector
-            playlists={playlists}
-            onAddToList={handleAddSongToList}
-            onNewList={handleCreateNewPlaylist}
-            onClose={() => setShowPlaylistSelector(false)}
-          />
-        )}
-
-        {songList.length > 0 && (
-          <audio
-            ref={audioRef}
-            src={songList[currentSongIndex]?.url}
-            onPlay={playSong}
-            onPause={pauseSong}
-            onEnded={handleSongEnd}
-            onTimeUpdate={updateTime}
-          />
-        )}
-        
-        {isLoggedIn && songList.length > 0 && activeView !== "player" && (
-          <MiniPlayer
-            currentSong={songList[currentSongIndex]}
-            isPlaying={isPlaying}
-            playSong={playSong}
-            pauseSong={pauseSong}
-            setActiveView={setActiveView}
-          />
-        )}
-      </div>
-    </>
+      <AppContent />
+    </BrowserRouter>
   );
 }
 
