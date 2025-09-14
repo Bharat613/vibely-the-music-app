@@ -123,6 +123,15 @@ function AppContent() {
   }, [isLoggedIn]);
 
   useEffect(() => {
+    // New useEffect to handle music playback on route change
+    if (location.pathname === '/auth') {
+      if (audioRef.current && !audioRef.current.paused) {
+        pauseSong();
+      }
+    }
+  }, [location.pathname]); // Dependency on location.pathname
+
+  useEffect(() => {
     const handleOutsideClick = (event) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
         setSuggestions([]);
@@ -228,6 +237,9 @@ function AppContent() {
     Cookies.remove("userToken");
     Cookies.remove("user");
     setRecentlyPlayed([]);
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+    }
     navigate("/auth");
   };
 
@@ -659,10 +671,7 @@ function AppContent() {
               showHomeButton={true}
             />
           ) : (
-            // <div className="no-song-container">
-            //   <p>No song is currently playing. Search for a song to begin.</p>
-            //   <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
-            // </div>
+            // 
             null
           )
         } />
