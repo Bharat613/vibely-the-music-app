@@ -12,874 +12,864 @@ import Player from "./components/Player";
 import MiniPlayer from "./components/MiniPlayer";
 import PlaylistSelector from "./components/PlaylistSelector";
 
+// These are no longer needed on the frontend since the backend will handle them
 const SAAVN_API_URL = import.meta.env.VITE_SAAVN_API_URL;
 const ITUNES_API_URL = import.meta.env.VITE_ITUNES_API_URL;
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 function AppContent() {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [songName, setSongName] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
-  const [songList, setSongList] = useState([]);
-  const [currentSongIndex, setCurrentSongIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [songName, setSongName] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [songList, setSongList] = useState([]);
+  const [currentSongIndex, setCurrentSongIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("userToken"));
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isLoginView, setIsLoginView] = useState(true);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [playlists, setPlaylists] = useState([]);
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
-  const [recentlyPlayed, setRecentlyPlayed] = useState([]);
-  const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("userToken"));
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isLoginView, setIsLoginView] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [playlists, setPlaylists] = useState([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
+  const [recentlyPlayed, setRecentlyPlayed] = useState([]);
+  const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
+  
+  // NEW STATE for dynamic trending songs
+  const [trendingSongs, setTrendingSongs] = useState([]);
 
-  const audioRef = useRef(null);
-  const searchContainerRef = useRef(null);
+  const audioRef = useRef(null);
+  const searchContainerRef = useRef(null);
 
-  useEffect(() => {
-    const storedSongList = localStorage.getItem("songList");
-    const storedSongIndex = localStorage.getItem("currentSongIndex");
+  useEffect(() => {
+    const storedSongList = localStorage.getItem("songList");
+    const storedSongIndex = localStorage.getItem("currentSongIndex");
 
-    if (storedSongList && storedSongIndex !== null) {
-      setSongList(JSON.parse(storedSongList));
-      setCurrentSongIndex(parseInt(storedSongIndex, 10));
-    }
+    if (storedSongList && storedSongIndex !== null) {
+      setSongList(JSON.parse(storedSongList));
+      setCurrentSongIndex(parseInt(storedSongIndex, 10));
+    }
 
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+    // NEW FETCH CALL for trending songs
+    const fetchTrendingSongs = async () => {
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/trending`);
+        const data = await response.json();
+        if (data.success) {
+          setTrendingSongs(data.songs);
+        }
+      } catch (error) {
+        console.error("Failed to fetch trending songs:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  useEffect(() => {
-    const token = localStorage.getItem("userToken");
-    if (token && location.pathname === "/auth") {
-      navigate("/");
-    }
-  }, [location.pathname, navigate]);
+    fetchTrendingSongs();
 
-  const trendingSongs = [
-    {
-      title: 'Kurchi Madathapetti',
-      movie: 'Guntur Kaaram',
-      image: 'https://upload.wikimedia.org/wikipedia/en/5/5e/Kurchi_Madathapetti.jpg',
-      url: import.meta.env.VITE_SONG_URL_KURCHI,
-    },
-    {
-      title: 'Nijame Ne Chebutunna',
-      movie: 'Ooru Peru Bhairavakona',
-      image: 'https://i.scdn.co/image/ab67616d0000b2731e5af7c5265c7ce91982b418',
-      url: import.meta.env.VITE_SONG_URL_NIJAME,
-    },
-    {
-      title: 'Samayama',
-      movie: 'Hi Nanna',
-      image: 'https://c.saavncdn.com/307/Samayama-From-Hi-Nanna-Telugu-2023-20230918164922-500x500.jpg',
-      url: import.meta.env.VITE_SONG_URL_SAMAYAMA,
-    },
-    {
-      title: 'Pushpa Pushpa',
-      movie: 'Pushpa 2: The Rule',
-      image: 'https://c.saavncdn.com/601/Pushpa-Pushpa-From-Pushpa-2-The-Rule-Telugu-Telugu-2024-20240501161044-500x500.jpg',
-      url: import.meta.env.VITE_SONG_URL_PUSHPA,
-    },
-    {
-      title: 'Koyila',
-      movie: '',
-      image: 'https://c.saavncdn.com/957/Koyila-Telugu-2025-20250522020441-500x500.jpg',
-      url: import.meta.env.VITE_SONG_URL_KOYILA,
-    },
-  ];
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
-  const handleShareSong = async (song) => {
-    if (!song) {
-      toast.error("No song selected to share.");
-      return;
-    }
-    const shareableUrl = `${window.location.origin}/?songTitle=${encodeURIComponent(song.title)}&artist=${encodeURIComponent(song.artist || '')}`;
-    const shareData = {
-      title: `Listen to "${song.title}" by ${song.artist} on Vibely!`,
-      text: `Hey, check out this amazing song! "${song.title}" by ${song.artist}.`,
-      url: shareableUrl,
-    };
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        setTimeout(() => {
-          toast.success("Song shared successfully!");
-        }, 2000);
-      } else {
-        await navigator.clipboard.writeText(shareData.url);
-        toast.info('Link copied to clipboard!');
-      }
-    } catch (error) {
-      console.error('Error sharing:', error);
-      toast.error('Failed to share.');
-    }
-  };
+  useEffect(() => {
+    const token = localStorage.getItem("userToken");
+    if (token && location.pathname === "/auth") {
+      navigate("/");
+    }
+  }, [location.pathname, navigate]);
 
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const sharedSongTitle = params.get('songTitle');
-    if (sharedSongTitle) {
-      fetchSong(sharedSongTitle);
-      navigate('/player');
-    }
-  }, [location.search, navigate]);
+  // REMOVED: The static trendingSongs array is no longer needed here.
 
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      const parsedUser = JSON.parse(user);
-      setCurrentUser(parsedUser);
-      fetchPlaylists(parsedUser.email);
-      fetchRecentlyPlayedSongs(parsedUser.email);
-    }
-  }, [isLoggedIn]);
+  const handleShareSong = async (song) => {
+    if (!song) {
+      toast.error("No song selected to share.");
+      return;
+    }
+    const shareableUrl = `${window.location.origin}/?songTitle=${encodeURIComponent(song.title)}&artist=${encodeURIComponent(song.artist || '')}`;
+    const shareData = {
+      title: `Listen to "${song.title}" by ${song.artist} on Vibely!`,
+      text: `Hey, check out this amazing song! "${song.title}" by ${song.artist}.`,
+      url: shareableUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setTimeout(() => {
+          toast.success("Song shared successfully!");
+        }, 2000);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        toast.info('Link copied to clipboard!');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+      toast.error('Failed to share.');
+    }
+  };
 
-  useEffect(() => {
-    if (location.pathname === '/auth') {
-      if (audioRef.current && !audioRef.current.paused) {
-        pauseSong();
-      }
-    }
-  }, [location.pathname]);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const sharedSongTitle = params.get('songTitle');
+    if (sharedSongTitle) {
+      fetchSong(sharedSongTitle);
+      navigate('/player');
+    }
+  }, [location.search, navigate]);
 
-  useEffect(() => {
-    const handleOutsideClick = (event) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
-        setSuggestions([]);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-    };
-  }, []);
-  
-  const fetchRecentlyPlayedSongs = async (userEmail) => {
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/recently-played/${userEmail}`);
-      const data = await response.json();
-      if (data.success) {
-        // Filter out duplicates from the fetched list
-        const uniqueSongs = [];
-        const seen = new Set();
-        data.recentlyPlayed.forEach(song => {
-          const songIdentifier = `${song.title}-${song.artist}`;
-          if (!seen.has(songIdentifier)) {
-            seen.add(songIdentifier);
-            uniqueSongs.push(song);
-          }
-        });
-        setRecentlyPlayed(uniqueSongs);
-      } else {
-        toast.error("Failed to fetch recently played songs: " + data.msg);
-      }
-    } catch (error) {
-      console.error("Error fetching recently played songs:", error);
-    }
-  };
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (user) {
+      const parsedUser = JSON.parse(user);
+      setCurrentUser(parsedUser);
+      fetchPlaylists(parsedUser.email);
+      fetchRecentlyPlayedSongs(parsedUser.email);
+    }
+  }, [isLoggedIn]);
 
-  const saveRecentlyPlayedSong = async (song, userEmail) => {
-    if (!song || !userEmail) return;
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/recently-played`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userEmail, song }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        // Update the local state to ensure uniqueness
-        setRecentlyPlayed(prevSongs => {
-          // Filter out the old instance of the song
-          const filteredSongs = prevSongs.filter(item => 
-            item.title !== song.title || item.artist !== song.artist
-          );
-          // Add the new song to the beginning of the list
-          return [song, ...filteredSongs];
-        });
-      }
-    } catch (error) {
-      console.error("Error saving song to recently played:", error);
-    }
-  };
+  useEffect(() => {
+    if (location.pathname === '/auth') {
+      if (audioRef.current && !audioRef.current.paused) {
+        pauseSong();
+      }
+    }
+  }, [location.pathname]);
 
-  useEffect(() => {
-    if (songList.length > 0) {
-      const currentSong = songList[currentSongIndex];
-      localStorage.setItem("songList", JSON.stringify(songList));
-      localStorage.setItem("currentSongIndex", currentSongIndex);
-      if (currentUser) {
-        saveRecentlyPlayedSong(currentSong, currentUser.email);
-      }
-    } else {
-      localStorage.removeItem("songList");
-      localStorage.removeItem("currentSongIndex");
-      localStorage.removeItem("isPlaying");
-    }
-  }, [currentSongIndex, songList, currentUser]);
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setSuggestions([]);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, []);
+  
+  const fetchRecentlyPlayedSongs = async (userEmail) => {
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/recently-played/${userEmail}`);
+      const data = await response.json();
+      if (data.success) {
+        // Filter out duplicates from the fetched list
+        const uniqueSongs = [];
+        const seen = new Set();
+        data.recentlyPlayed.forEach(song => {
+          const songIdentifier = `${song.title}-${song.artist}`;
+          if (!seen.has(songIdentifier)) {
+            seen.add(songIdentifier);
+            uniqueSongs.push(song);
+          }
+        });
+        setRecentlyPlayed(uniqueSongs);
+      } else {
+        toast.error("Failed to fetch recently played songs: " + data.msg);
+      }
+    } catch (error) {
+      console.error("Error fetching recently played songs:", error);
+    }
+  };
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast.success(data.msg);
-        setIsLoggedIn(true);
-        setCurrentUser(data.user);
-        localStorage.setItem("userToken", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        fetchPlaylists(data.user.email);
-        fetchRecentlyPlayedSongs(data.user.email);
-        navigate("/");
-      } else {
-        toast.error(data.msg);
-      }
-    } catch (error) {
-      toast.error("Failed to connect to server. Please try again.");
-    }
-  };
+  const saveRecentlyPlayedSong = async (song, userEmail) => {
+    if (!song || !userEmail) return;
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/recently-played`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: userEmail, song }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        // Update the local state to ensure uniqueness
+        setRecentlyPlayed(prevSongs => {
+          // Filter out the old instance of the song
+          const filteredSongs = prevSongs.filter(item => 
+            item.title !== song.title || item.artist !== song.artist
+          );
+          // Add the new song to the beginning of the list
+          return [song, ...filteredSongs];
+        });
+      }
+    } catch (error) {
+      console.error("Error saving song to recently played:", error);
+    }
+  };
 
-  const handleSignup = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast.success(data.msg);
-        setIsLoginView(true);
-        setEmail("");
-        setPassword("");
-      } else {
-        toast.error(data.msg);
-      }
-    } catch (error) {
-      toast.error("Failed to connect to server. Please try again.");
-    }
-  };
+  useEffect(() => {
+    if (songList.length > 0) {
+      const currentSong = songList[currentSongIndex];
+      localStorage.setItem("songList", JSON.stringify(songList));
+      localStorage.setItem("currentSongIndex", currentSongIndex);
+      if (currentUser) {
+        saveRecentlyPlayedSong(currentSong, currentUser.email);
+      }
+    } else {
+      localStorage.removeItem("songList");
+      localStorage.removeItem("currentSongIndex");
+      localStorage.removeItem("isPlaying");
+    }
+  }, [currentSongIndex, songList, currentUser]);
 
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setCurrentUser(null);
-    setSongList([]);
-    setPlaylists([]);
-    localStorage.removeItem("userToken");
-    localStorage.removeItem("user");
-    localStorage.removeItem("songList");
-    localStorage.removeItem("currentSongIndex");
-    localStorage.removeItem("isPlaying");
-    setRecentlyPlayed([]);
-    if (audioRef.current && !audioRef.current.paused) {
-      audioRef.current.pause();
-    }
-    navigate("/auth");
-  };
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.msg);
+        setIsLoggedIn(true);
+        setCurrentUser(data.user);
+        localStorage.setItem("userToken", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        fetchPlaylists(data.user.email);
+        fetchRecentlyPlayedSongs(data.user.email);
+        navigate("/");
+      } else {
+        toast.error(data.msg);
+      }
+    } catch (error) {
+      toast.error("Failed to connect to server. Please try again.");
+    }
+  };
 
-  const fetchPlaylists = async (userEmail) => {
-    if (!userEmail) return;
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/playlists/${userEmail}`);
-      const data = await response.json();
-      if (data.success) {
-        let playlistsFromServer = data.playlists;
-        const hasLikedSongs = playlistsFromServer.some(p => p.name === "Liked Songs");
-        if (!hasLikedSongs) {
-          const defaultLikedPlaylist = { name: "Liked Songs", songs: [] };
-          playlistsFromServer = [defaultLikedPlaylist, ...playlistsFromServer];
-        }
-        setPlaylists(playlistsFromServer);
-      } else {
-        toast.error("Failed to fetch playlists: " + data.msg);
-      }
-    } catch (error) {
-      console.error("Error fetching playlists:", error);
-    }
-  };
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.msg);
+        setIsLoginView(true);
+        setEmail("");
+        setPassword("");
+      } else {
+        toast.error(data.msg);
+      }
+    } catch (error) {
+      toast.error("Failed to connect to server. Please try again.");
+    }
+  };
 
-  const addSongToPlaylist = async (playlistName, song) => {
-    if (!currentUser) {
-      toast.error("Please log in to add songs to a playlist.");
-      return false;
-    }
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/playlists`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: currentUser.email, playlistName, song }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        fetchPlaylists(currentUser.email);
-        toast.success("Song added!");
-        return true;
-      } else {
-        toast.error("Failed to add song: " + data.msg);
-        return false;
-      }
-    } catch (error) {
-      console.error("Error adding to playlist:", error);
-      toast.error("Failed to add song. Please try again.");
-      return false;
-    }
-  };
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+    setSongList([]);
+    setPlaylists([]);
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("user");
+    localStorage.removeItem("songList");
+    localStorage.removeItem("currentSongIndex");
+    localStorage.removeItem("isPlaying");
+    setRecentlyPlayed([]);
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+    }
+    navigate("/auth");
+  };
 
-  const removeSongFromPlaylist = async (playlistName, songToRemove) => {
-    if (!currentUser) {
-      toast.error("Please log in to manage playlists.");
-      return;
-    }
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/playlists`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: currentUser.email,
-          playlistName,
-          song: songToRemove,
-        }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast.success(data.msg);
-        setPlaylists(prevPlaylists => {
-          const updatedPlaylists = prevPlaylists.map(playlist => {
-            if (playlist.name === playlistName) {
-              const newSongs = playlist.songs.filter(
-                song => song.title !== songToRemove.title || song.artist !== songToRemove.artist
-              );
-              return { ...playlist, songs: newSongs };
-            }
-            return playlist;
-          });
+  const fetchPlaylists = async (userEmail) => {
+    if (!userEmail) return;
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/playlists/${userEmail}`);
+      const data = await response.json();
+      if (data.success) {
+        let playlistsFromServer = data.playlists;
+        const hasLikedSongs = playlistsFromServer.some(p => p.name === "Liked Songs");
+        if (!hasLikedSongs) {
+          const defaultLikedPlaylist = { name: "Liked Songs", songs: [] };
+          playlistsFromServer = [defaultLikedPlaylist, ...playlistsFromServer];
+        }
+        setPlaylists(playlistsFromServer);
+      } else {
+        toast.error("Failed to fetch playlists: " + data.msg);
+      }
+    } catch (error) {
+      console.error("Error fetching playlists:", error);
+    }
+  };
 
-          setSelectedPlaylist(currentSelected => {
-            if (currentSelected?.name === playlistName) {
-              const updatedPlaylist = updatedPlaylists.find(p => p.name === playlistName);
-              return updatedPlaylist;
-            }
-            return currentSelected;
-          });
+  const addSongToPlaylist = async (playlistName, song) => {
+    if (!currentUser) {
+      toast.error("Please log in to add songs to a playlist.");
+      return false;
+    }
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/playlists`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: currentUser.email, playlistName, song }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        fetchPlaylists(currentUser.email);
+        toast.success("Song added!");
+        return true;
+      } else {
+        toast.error("Failed to add song: " + data.msg);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error adding to playlist:", error);
+      toast.error("Failed to add song. Please try again.");
+      return false;
+    }
+  };
 
-          return updatedPlaylists;
-        });
-      } else {
-        toast.error("Failed to remove song: " + data.msg);
-      }
-    } catch (error) {
-      console.error("Error removing from playlist:", error);
-    }
-  };
+  const removeSongFromPlaylist = async (playlistName, songToRemove) => {
+    if (!currentUser) {
+      toast.error("Please log in to manage playlists.");
+      return;
+    }
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/playlists`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: currentUser.email,
+          playlistName,
+          song: songToRemove,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.msg);
+        setPlaylists(prevPlaylists => {
+          const updatedPlaylists = prevPlaylists.map(playlist => {
+            if (playlist.name === playlistName) {
+              const newSongs = playlist.songs.filter(
+                song => song.title !== songToRemove.title || song.artist !== songToRemove.artist
+              );
+              return { ...playlist, songs: newSongs };
+            }
+            return playlist;
+          });
 
-  const fetchSongImage = async (songTitle, artistName) => {
-    try {
-      const searchTerm = artistName ? `${songTitle} ${artistName}` : songTitle;
-      const res = await fetch(`${ITUNES_API_URL}?term=${encodeURIComponent(searchTerm)}&entity=song&limit=1`);
-      if (!res.ok) throw new Error(`iTunes API request failed: ${res.status}`);
-      const data = await res.json();
-      if (data.results && data.results.length > 0) {
-        return data.results[0].artworkUrl100.replace("100x100", "500x500");
-      }
-      return "/veebly.png";
-    } catch (err) {
-      console.error("iTunes fetch error:", err);
-      return "/veebly.png";
-    }
-  };
+          setSelectedPlaylist(currentSelected => {
+            if (currentSelected?.name === playlistName) {
+              const updatedPlaylist = updatedPlaylists.find(p => p.name === playlistName);
+              return updatedPlaylist;
+            }
+            return currentSelected;
+          });
 
-  const fetchSong = async (name) => {
-    try {
-      const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(name)}&bitrate=320`);
-      const data = await res.json();
+          return updatedPlaylists;
+        });
+      } else {
+        toast.error("Failed to remove song: " + data.msg);
+      }
+    } catch (error) {
+      console.error("Error removing from playlist:", error);
+    }
+  };
 
-      if (data.success && data.data?.results?.length > 0) {
-        const songs = await Promise.all(
-          data.data.results.map(async (song) => {
-            const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
-            const img = await fetchSongImage(cleanedTitle, song.primaryArtists);
-            return {
-              title: cleanedTitle,
-              artist: song.primaryArtists,
-              url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
-              image: img,
-              album: song.album?.name || "Unknown Album",
-            };
-          })
-        );
-        setSongList(songs);
-        setCurrentSongIndex(0);
-        setSuggestions([]);
-        navigate("/player");
-      } else {
-        toast.error("❌ Song not found!");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to fetch songs. Please try again.");
-    }
-  };
+  const fetchSongImage = async (songTitle, artistName) => {
+    try {
+      const searchTerm = artistName ? `${songTitle} ${artistName}` : songTitle;
+      const res = await fetch(`${ITUNES_API_URL}?term=${encodeURIComponent(searchTerm)}&entity=song&limit=1`);
+      if (!res.ok) throw new Error(`iTunes API request failed: ${res.status}`);
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        return data.results[0].artworkUrl100.replace("100x100", "500x500");
+      }
+      return "/veebly.png";
+    } catch (err) {
+      console.error("iTunes fetch error:", err);
+      return "/veebly.png";
+    }
+  };
 
-  // Helper function to play the current song
-  const playCurrentSong = () => {
-    if (audioRef.current && songList.length > 0) {
-      audioRef.current.src = songList[currentSongIndex].url;
-      audioRef.current.load();
-      audioRef.current.play().catch(error => console.error("Autoplay was prevented:", error));
-      setIsPlaying(true);
-    }
-  };
+  const fetchSong = async (name) => {
+    try {
+      const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(name)}&bitrate=320`);
+      const data = await res.json();
 
-  // useEffect to handle changes to the song list or current song index
-  useEffect(() => {
-    if (songList.length > 0) {
-      playCurrentSong();
-    }
-  }, [currentSongIndex, songList]);
+      if (data.success && data.data?.results?.length > 0) {
+        const songs = await Promise.all(
+          data.data.results.map(async (song) => {
+            const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
+            const img = await fetchSongImage(cleanedTitle, song.primaryArtists);
+            return {
+              title: cleanedTitle,
+              artist: song.primaryArtists,
+              url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
+              image: img,
+              album: song.album?.name || "Unknown Album",
+            };
+          })
+        );
+        setSongList(songs);
+        setCurrentSongIndex(0);
+        setSuggestions([]);
+        navigate("/player");
+      } else {
+        toast.error("❌ Song not found!");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch songs. Please try again.");
+    }
+  };
 
-  const playSong = () => {
-    if (audioRef.current) {
-      audioRef.current.play();
-      setIsPlaying(true);
-    }
-  };
+  // Helper function to play the current song
+  const playCurrentSong = () => {
+    if (audioRef.current && songList.length > 0) {
+      audioRef.current.src = songList[currentSongIndex].url;
+      audioRef.current.load();
+      audioRef.current.play().catch(error => console.error("Autoplay was prevented:", error));
+      setIsPlaying(true);
+    }
+  };
 
-  const pauseSong = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    }
-  };
+  // useEffect to handle changes to the song list or current song index
+  useEffect(() => {
+    if (songList.length > 0) {
+      playCurrentSong();
+    }
+  }, [currentSongIndex, songList]);
 
-  const nextSong = () => {
-    if (songList.length > 0) {
-      const nextIndex = (currentSongIndex + 1) % songList.length;
-      setCurrentSongIndex(nextIndex);
-    } else {
-      setIsPlaying(false);
-    }
-  };
+  const playSong = () => {
+    if (audioRef.current) {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
+  };
 
-  const prevSong = () => {
-    if (songList.length > 0) {
-      const prevIndex = (currentSongIndex - 1 + songList.length) % songList.length;
-      setCurrentSongIndex(prevIndex);
-    } else {
-      setIsPlaying(false);
-    }
-  };
+  const pauseSong = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
 
-  // Simplified and corrected handleSongEnd function
-  const handleSongEnd = () => {
-    if (songList.length > 1) {
-      nextSong();
-    } else {
-      setIsPlaying(false);
-    }
-  };
+  const nextSong = () => {
+    if (songList.length > 0) {
+      const nextIndex = (currentSongIndex + 1) % songList.length;
+      setCurrentSongIndex(nextIndex);
+    } else {
+      setIsPlaying(false);
+    }
+  };
 
-  const handleInputChange = async (e) => {
-    const value = e.target.value;
-    setSongName(value);
-    if (value.length > 2) {
-      try {
-        const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(value)}&bitrate=320`);
-        const data = await res.json();
-        if (data.success && data.data?.results?.length > 0) {
-          const suggs = data.data.results.slice(0, 5).map((s) => ({ title: s.name, artist: s.primaryArtists }));
-          setSuggestions(suggs);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    } else setSuggestions([]);
-  };
+  const prevSong = () => {
+    if (songList.length > 0) {
+      const prevIndex = (currentSongIndex - 1 + songList.length) % songList.length;
+      setCurrentSongIndex(prevIndex);
+    } else {
+      setIsPlaying(false);
+    }
+  };
 
-  const handleTimeChange = (e) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = e.target.value;
-      setCurrentTime(e.target.value);
-    }
-  };
+  // Simplified and corrected handleSongEnd function
+  const handleSongEnd = () => {
+    if (songList.length > 1) {
+      nextSong();
+    } else {
+      setIsPlaying(false);
+    }
+  };
 
-  const updateTime = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime);
-      setDuration(audioRef.current.duration || 0);
-    }
-  };
+  const handleInputChange = async (e) => {
+    const value = e.target.value;
+    setSongName(value);
+    if (value.length > 2) {
+      try {
+        const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(value)}&bitrate=320`);
+        const data = await res.json();
+        if (data.success && data.data?.results?.length > 0) {
+          const suggs = data.data.results.slice(0, 5).map((s) => ({ title: s.name, artist: s.primaryArtists }));
+          setSuggestions(suggs);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    } else setSuggestions([]);
+  };
 
-  const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const handleTimeChange = (e) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = e.target.value;
+      setCurrentTime(e.target.value);
+    }
+  };
 
-  const handleDeletePlaylist = async (playlistToDelete) => {
-    if (!currentUser) {
-      toast.error("Please log in to manage playlists.");
-      return;
-    }
+  const updateTime = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+      setDuration(audioRef.current.duration || 0);
+    }
+  };
 
-    if (playlistToDelete.name === "Liked Songs") {
-      toast.error("You cannot delete the Liked Songs playlist.");
-      return;
-    }
+  const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
 
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/playlists/delete`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: currentUser.email,
-          playlistName: playlistToDelete.name,
-        }),
-      });
+  const handleDeletePlaylist = async (playlistToDelete) => {
+    if (!currentUser) {
+      toast.error("Please log in to manage playlists.");
+      return;
+    }
 
-      const data = await response.json();
-      if (data.success) {
-        toast.success(data.msg);
-        setPlaylists(prevPlaylists =>
-          prevPlaylists.filter(p => p.name !== playlistToDelete.name)
-        );
-      } else {
-        toast.error("Failed to delete playlist: " + data.msg);
-      }
-    } catch (error) {
-      console.error("Error deleting playlist:", error);
-    }
-  };
+    if (playlistToDelete.name === "Liked Songs") {
+      toast.error("You cannot delete the Liked Songs playlist.");
+      return;
+    }
 
-  const playFromList = (song) => {
-    const currentPlaylist = playlists.find(p => p.name === selectedPlaylist?.name);
-    if (currentPlaylist) {
-      const songIndex = currentPlaylist.songs.findIndex(
-        (s) => s.title === song.title && s.artist === song.artist
-      );
-      if (songIndex !== -1) {
-        setSongList(currentPlaylist.songs);
-        setCurrentSongIndex(songIndex);
-        navigate("/player");
-      } else {
-        setSongList([song]);
-        setCurrentSongIndex(0);
-        navigate("/player");
-      }
-    } else {
-      setSongList([song]);
-      setCurrentSongIndex(0);
-      navigate("/player");
-    }
-  };
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/playlists/delete`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: currentUser.email,
+          playlistName: playlistToDelete.name,
+        }),
+      });
 
-  const handleOpenPlaylistSelector = () => {
-    if (!currentUser) {
-      toast.error("Please log in to add songs to a playlist.");
-      return;
-    }
-    setShowPlaylistSelector(true);
-  };
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.msg);
+        setPlaylists(prevPlaylists =>
+          prevPlaylists.filter(p => p.name !== playlistToDelete.name)
+        );
+      } else {
+        toast.error("Failed to delete playlist: " + data.msg);
+      }
+    } catch (error) {
+      console.error("Error deleting playlist:", error);
+    }
+  };
 
-  // NEW HANDLER: This function is for the Home page. It only creates a playlist.
-  const handleCreateEmptyPlaylist = async (newPlaylistName) => {
-    if (!currentUser) {
-      toast.error("Please log in to create a playlist.");
-      return false;
-    }
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/playlists/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: currentUser.email, playlistName: newPlaylistName }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast.success(`Playlist '${newPlaylistName}' created!`);
-        await fetchPlaylists(currentUser.email);
-        return true;
-      } else {
-        toast.error("Failed to create playlist: " + data.msg);
-        return false;
-      }
-    } catch (error) {
-      console.error("Error creating playlist:", error);
-      toast.error("Failed to create playlist. Please try again.");
-      return false;
-    }
-  };
+  const playFromList = (song) => {
+    const currentPlaylist = playlists.find(p => p.name === selectedPlaylist?.name);
+    if (currentPlaylist) {
+      const songIndex = currentPlaylist.songs.findIndex(
+        (s) => s.title === song.title && s.artist === song.artist
+      );
+      if (songIndex !== -1) {
+        setSongList(currentPlaylist.songs);
+        setCurrentSongIndex(songIndex);
+        navigate("/player");
+      } else {
+        setSongList([song]);
+        setCurrentSongIndex(0);
+        navigate("/player");
+      }
+    } else {
+      setSongList([song]);
+      setCurrentSongIndex(0);
+      navigate("/player");
+    }
+  };
 
-  // MODIFIED HANDLER: This function is for the Player. It creates a list and adds the song.
-  const handleCreateAndAddSong = async (newPlaylistName) => {
-    if (!currentUser || songList.length === 0) {
-      toast.error("Please log in and play a song to add.");
-      return false;
-    }
-    try {
-      const response = await fetch(`${BACKEND_URL}/api/playlists/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: currentUser.email, playlistName: newPlaylistName }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        const songAddedSuccess = await addSongToPlaylist(newPlaylistName, songList[currentSongIndex]);
-        if (songAddedSuccess) {
-          toast.success("Song added!");
-          return true;
-        } else {
-          toast.error(`Playlist created, but failed to add song.`);
-          return false;
-        }
-      } else {
-        toast.error("Failed to create playlist: " + data.msg);
-        return false;
-      }
-    } catch (error) {
-      console.error("Error creating playlist:", error);
-      toast.error("Failed to create playlist. Please try again.");
-      return false;
-    }
-  };
-  
-  // NEW FUNCTION: This handler is a wrapper for adding a song to an existing list.
-  const handleAddSongToExistingPlaylist = (playlistName) => {
-    if (songList.length > 0) {
-      addSongToPlaylist(playlistName, songList[currentSongIndex]);
-    } else {
-      toast.error("No song is currently playing to add to a playlist.");
-    }
-    setShowPlaylistSelector(false); // Close the selector after selection
-  };
+  const handleOpenPlaylistSelector = () => {
+    if (!currentUser) {
+      toast.error("Please log in to add songs to a playlist.");
+      return;
+    }
+    setShowPlaylistSelector(true);
+  };
 
-  const onAddToLikedSongsClick = (song) => {
-    addSongToPlaylist("Liked Songs", song);
-  };
+  // NEW HANDLER: This function is for the Home page. It only creates a playlist.
+  const handleCreateEmptyPlaylist = async (newPlaylistName) => {
+    if (!currentUser) {
+      toast.error("Please log in to create a playlist.");
+      return false;
+    }
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/playlists/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: currentUser.email, playlistName: newPlaylistName }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(`Playlist '${newPlaylistName}' created!`);
+        await fetchPlaylists(currentUser.email);
+        return true;
+      } else {
+        toast.error("Failed to create playlist: " + data.msg);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error creating playlist:", error);
+      toast.error("Failed to create playlist. Please try again.");
+      return false;
+    }
+  };
 
-  if (isLoading) {
-    return (
-      <div id="splash-screen">
-        <img src="/icons/icon-512x512.png" alt="Vibely Logo" className="splash-logo" />
-      </div>
-    );
-  }
+  // MODIFIED HANDLER: This function is for the Player. It creates a list and adds the song.
+  const handleCreateAndAddSong = async (newPlaylistName) => {
+    if (!currentUser || songList.length === 0) {
+      toast.error("Please log in and play a song to add.");
+      return false;
+    }
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/playlists/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: currentUser.email, playlistName: newPlaylistName }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        const songAddedSuccess = await addSongToPlaylist(newPlaylistName, songList[currentSongIndex]);
+        if (songAddedSuccess) {
+          toast.success("Song added!");
+          return true;
+        } else {
+          toast.error(`Playlist created, but failed to add song.`);
+          return false;
+        }
+      } else {
+        toast.error("Failed to create playlist: " + data.msg);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error creating playlist:", error);
+      toast.error("Failed to create playlist. Please try again.");
+      return false;
+    }
+  };
+  
+  // NEW FUNCTION: This handler is a wrapper for adding a song to an existing list.
+  const handleAddSongToExistingPlaylist = (playlistName) => {
+    if (songList.length > 0) {
+      addSongToPlaylist(playlistName, songList[currentSongIndex]);
+    } else {
+      toast.error("No song is currently playing to add to a playlist.");
+    }
+    setShowPlaylistSelector(false); // Close the selector after selection
+  };
 
-  return (
-    <div className="app">
-      <Routes>
-        <Route path="/auth" element={
-          <Auth
-            isLoginView={isLoginView}
-            setIsLoginView={setIsLoginView}
-            email={email}
-            setEmail={setEmail}
-            password={password}
-            setPassword={setPassword}
-            handleLogin={handleLogin}
-            handleSignup={handleSignup}
-          />
-        } />
-        <Route
-          path="/"
-          element={
-            isLoggedIn ? (
-              <>
-                <div className="top-bar">
-                  <div className="search-container" ref={searchContainerRef}>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (songName) fetchSong(songName);
-                      }}
-                    >
-                      <input
-                        type="text"
-                        value={songName}
-                        onChange={handleInputChange}
-                        onFocus={() => {
-                          if (suggestions.length > 0 || songName.length > 2) {
-                            handleInputChange({ target: { value: songName } });
-                          }
-                        }}
-                        placeholder="Search songs..."
-                      />
-                      <button className="search-button" type="submit">
-                        <FaSearch />
-                      </button>
-                    </form>
-                    {suggestions.length > 0 && (
-                      <ul className="suggestions">
-                        {suggestions.map((s, i) => (
-                          <li key={i} onClick={() => {
-                            setSongName(s.title);
-                            fetchSong(s.title);
-                            setSuggestions([]);
-                          }}
-                          >
-                            {s.title}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  <button onClick={handleLogout} className="auth-button logout-button">
-                    Logout
-                  </button>
-                </div>
-                <div className="main-content">
-                  <Home
-                    recentSongs={recentlyPlayed}
-                    playlists={playlists}
-                    playFromList={playFromList}
-                    onPlaylistClick={(playlist) => {
-                      setSelectedPlaylist(playlist);
-                      navigate("/playlist");
-                    }}
-                    onDeletePlaylist={handleDeletePlaylist}
-                    trendingSongs={trendingSongs}
-                    onCreatePlaylistClick={handleOpenPlaylistSelector}
-                  />
-                </div>
-              </>
-            ) : (
-              <Navigate to="/auth" replace />
-            )
-          }
-        />
-        <Route path="/player" element={
-          songList.length > 0 ? (
-            <Player
-              audioRef={audioRef}
-              currentSong={songList[currentSongIndex]}
-              isPlaying={isPlaying}
-              currentTime={currentTime}
-              duration={duration}
-              progressPercentage={progressPercentage}
-              handleTimeChange={handleTimeChange}
-              playSong={playSong}
-              pauseSong={pauseSong}
-              prevSong={prevSong}
-              nextSong={nextSong}
-              handleSongEnd={handleSongEnd}
-              updateTime={updateTime}
-              onAddToListClick={handleOpenPlaylistSelector}
-              onAddToLikedSongsClick={onAddToLikedSongsClick}
-              onShareClick={handleShareSong}
-              setActiveView={() => navigate("/")}
-              showHomeButton={true}
-          />
-          ) : (
-            <div className="no-song-container">
-              <p>No song is currently playing. Search for a song to begin.</p>
-              <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
-            </div>
-          )
-        } />
-        <Route path="/playlist" element={
-          selectedPlaylist ? (
-            <div className="playlist-view">
-              <button className="back-button" onClick={() => navigate("/")}><i className="fa-solid fa-backward"></i></button>
-              <h2 className="section-title">{selectedPlaylist?.name}</h2>
-              <ul className="playlist-list">
-                {selectedPlaylist?.songs?.map((song, index) => (
-                  <li key={index} className="playlist-item">
-                    <div className="playlist-song-info" onClick={() => {
-                      playFromList(song);
-                      setSongList(selectedPlaylist.songs);
-                      setCurrentSongIndex(index);
-                      navigate("/player");
-                    }}>
-                      <img src={song.image} alt={song.title} />
-                      <div className="playlist-info">
-                        <h4>{song.title}</h4>
-                        <p>{song.album}</p>
-                      </div>
-                    </div>
-                    <button
-                      className="remove-song-button"
-                      onClick={() => removeSongFromPlaylist(selectedPlaylist.name, song)}
-                    >
-                      <FaTrash />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <div className="no-playlist-container">
-                <p>No playlist selected. Please choose a playlist from the home page.</p>
-                <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
-            </div>
-          )
-        } />
-        <Route path="*" element={
-          <div className="not-found-container">
-            <p>404 - Page not found.</p>
-            <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
-          </div>
-        } />
-      </Routes>
-      {showPlaylistSelector && (
-        <PlaylistSelector
-          playlists={playlists}
-          onAddToList={handleAddSongToExistingPlaylist} // USE THE NEW WRAPPER HERE
-          onNewList={location.pathname === '/' ? handleCreateEmptyPlaylist : handleCreateAndAddSong}
-          onClose={() => setShowPlaylistSelector(false)}
-        />
-      )}
+  const onAddToLikedSongsClick = (song) => {
+    addSongToPlaylist("Liked Songs", song);
+  };
 
-      {songList.length > 0 && (
-        <audio
-          ref={audioRef}
-          src={songList[currentSongIndex]?.url}
-          onPlay={playSong}
-          onPause={pauseSong}
-          onEnded={handleSongEnd}
-          onTimeUpdate={updateTime}
-        />
-      )}
+  if (isLoading) {
+    return (
+      <div id="splash-screen">
+        <img src="/icons/icon-512x512.png" alt="Vibely Logo" className="splash-logo" />
+      </div>
+    );
+  }
 
-      {isLoggedIn && songList.length > 0 && location.pathname !== "/player" && (
-        <MiniPlayer
-          currentSong={songList[currentSongIndex]}
-          isPlaying={isPlaying}
-          playSong={playSong}
-          pauseSong={pauseSong}
-          setActiveView={() => navigate("/player")}
-        />
-      )}
-    </div>
-  );
+  return (
+    <div className="app">
+      <Routes>
+        <Route path="/auth" element={
+          <Auth
+            isLoginView={isLoginView}
+            setIsLoginView={setIsLoginView}
+            email={email}
+            setEmail={setEmail}
+            password={password}
+            setPassword={setPassword}
+            handleLogin={handleLogin}
+            handleSignup={handleSignup}
+          />
+        } />
+        <Route
+          path="/"
+          element={
+            isLoggedIn ? (
+              <>
+                <div className="top-bar">
+                  <div className="search-container" ref={searchContainerRef}>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (songName) fetchSong(songName);
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={songName}
+                        onChange={handleInputChange}
+                        onFocus={() => {
+                          if (suggestions.length > 0 || songName.length > 2) {
+                            handleInputChange({ target: { value: songName } });
+                          }
+                        }}
+                        placeholder="Search songs..."
+                      />
+                      <button className="search-button" type="submit">
+                        <FaSearch />
+                      </button>
+                    </form>
+                    {suggestions.length > 0 && (
+                      <ul className="suggestions">
+                        {suggestions.map((s, i) => (
+                          <li key={i} onClick={() => {
+                            setSongName(s.title);
+                            fetchSong(s.title);
+                            setSuggestions([]);
+                          }}
+                          >
+                            {s.title}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <button onClick={handleLogout} className="auth-button logout-button">
+                    Logout
+                  </button>
+                </div>
+                <div className="main-content">
+                  <Home
+                    recentSongs={recentlyPlayed}
+                    playlists={playlists}
+                    playFromList={playFromList}
+                    onPlaylistClick={(playlist) => {
+                      setSelectedPlaylist(playlist);
+                      navigate("/playlist");
+                    }}
+                    onDeletePlaylist={handleDeletePlaylist}
+                    trendingSongs={trendingSongs} // PASSED THE NEW STATE HERE
+                    onCreatePlaylistClick={handleOpenPlaylistSelector}
+                  />
+                </div>
+              </>
+            ) : (
+              <Navigate to="/auth" replace />
+            )
+          }
+        />
+        <Route path="/player" element={
+          songList.length > 0 ? (
+            <Player
+              audioRef={audioRef}
+              currentSong={songList[currentSongIndex]}
+              isPlaying={isPlaying}
+              currentTime={currentTime}
+              duration={duration}
+              progressPercentage={progressPercentage}
+              handleTimeChange={handleTimeChange}
+              playSong={playSong}
+              pauseSong={pauseSong}
+              prevSong={prevSong}
+              nextSong={nextSong}
+              handleSongEnd={handleSongEnd}
+              updateTime={updateTime}
+              onAddToListClick={handleOpenPlaylistSelector}
+              onAddToLikedSongsClick={onAddToLikedSongsClick}
+              onShareClick={handleShareSong}
+              setActiveView={() => navigate("/")}
+              showHomeButton={true}
+            />
+          ) : (
+            <div className="no-song-container">
+              <p>No song is currently playing. Search for a song to begin.</p>
+              <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
+            </div>
+          )
+        } />
+        <Route path="/playlist" element={
+          selectedPlaylist ? (
+            <div className="playlist-view">
+              <button className="back-button" onClick={() => navigate("/")}><i className="fa-solid fa-backward"></i></button>
+              <h2 className="section-title">{selectedPlaylist?.name}</h2>
+              <ul className="playlist-list">
+                {selectedPlaylist?.songs?.map((song, index) => (
+                  <li key={index} className="playlist-item">
+                    <div className="playlist-song-info" onClick={() => {
+                      playFromList(song);
+                      setSongList(selectedPlaylist.songs);
+                      setCurrentSongIndex(index);
+                      navigate("/player");
+                    }}>
+                      <img src={song.image} alt={song.title} />
+                      <div className="playlist-info">
+                        <h4>{song.title}</h4>
+                        <p>{song.album}</p>
+                      </div>
+                    </div>
+                    <button
+                      className="remove-song-button"
+                      onClick={() => removeSongFromPlaylist(selectedPlaylist.name, song)}
+                    >
+                      <FaTrash />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="no-playlist-container">
+                <p>No playlist selected. Please choose a playlist from the home page.</p>
+                <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
+            </div>
+          )
+        } />
+        <Route path="*" element={
+          <div className="not-found-container">
+            <p>404 - Page not found.</p>
+            <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
+          </div>
+        } />
+      </Routes>
+      {showPlaylistSelector && (
+        <PlaylistSelector
+          playlists={playlists}
+          onAddToList={handleAddSongToExistingPlaylist} // USE THE NEW WRAPPER HERE
+          onNewList={location.pathname === '/' ? handleCreateEmptyPlaylist : handleCreateAndAddSong}
+          onClose={() => setShowPlaylistSelector(false)}
+        />
+      )}
+
+      {songList.length > 0 && (
+        <audio
+          ref={audioRef}
+          src={songList[currentSongIndex]?.url}
+          onPlay={playSong}
+          onPause={pauseSong}
+          onEnded={handleSongEnd}
+          onTimeUpdate={updateTime}
+        />
+      )}
+
+      {isLoggedIn && songList.length > 0 && location.pathname !== "/player" && (
+        <MiniPlayer
+          currentSong={songList[currentSongIndex]}
+          isPlaying={isPlaying}
+          playSong={playSong}
+          pauseSong={pauseSong}
+          setActiveView={() => navigate("/player")}
+        />
+      )}
+    </div>
+  );
 }
 
 function App() {
-  return (
-    <BrowserRouter>
-      <ToastContainer
-        position="top-center"
-        autoClose={2000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        draggable
-        pauseOnHover
-        className="vibely-toast-container"
-        toastClassName="vibely-toast"
-        progressClassName="vibely-progress"
-      />
-      <AppContent />
-    </BrowserRouter>
-  );
+  return (
+    <BrowserRouter>
+      <ToastContainer
+        position="top-center"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        draggable
+        pauseOnHover
+        className="vibely-toast-container"
+        toastClassName="vibely-toast"
+        progressClassName="vibely-progress"
+      />
+      <AppContent />
+    </BrowserRouter>
+  );
 }
 
 export default App;
