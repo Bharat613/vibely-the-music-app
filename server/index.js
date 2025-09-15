@@ -82,7 +82,7 @@ app.post('/api/login', async (req, res) => {
 // You can manually update this list without changing the frontend
 const trendingSongsList = [
      {
-    tile:'Bombay Ki Raanu',
+    title:'Bombay Ki Raanu',
     movie:'Private Song',
     image:'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/82/40/8a/82408aa6-8d15-bd9d-bcd4-9819b2c3e012/cover.jpg/500x500bb.jpg',
     url:process.env.SONG_URL_BOMBAY,
