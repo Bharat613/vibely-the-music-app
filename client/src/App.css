@@ -98,7 +98,7 @@ body {
   list-style: none;
   z-index: 10;
   margin-top: 0.5rem;
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   scrollbar-width: none;
@@ -725,6 +725,22 @@ body {
   .vibely-toast {
     border-radius: 20px !important; 
   }
+  .suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: var(--tertiary-bg);
+  border-radius: var(--border-radius);
+  list-style: none;
+  z-index: 10;
+  margin-top: 0.5rem;
+  max-height: 300px;
+  width: 130%;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  scrollbar-width: none;
+}
 }
 .fa-backward{
   padding: 10px;
