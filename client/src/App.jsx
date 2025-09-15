@@ -162,13 +162,23 @@ function AppContent() {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
   }, []);
-
+  
   const fetchRecentlyPlayedSongs = async (userEmail) => {
     try {
       const response = await fetch(`${BACKEND_URL}/api/recently-played/${userEmail}`);
       const data = await response.json();
       if (data.success) {
-        setRecentlyPlayed(data.recentlyPlayed);
+        // Filter out duplicates from the fetched list
+        const uniqueSongs = [];
+        const seen = new Set();
+        data.recentlyPlayed.forEach(song => {
+          const songIdentifier = `${song.title}-${song.artist}`;
+          if (!seen.has(songIdentifier)) {
+            seen.add(songIdentifier);
+            uniqueSongs.push(song);
+          }
+        });
+        setRecentlyPlayed(uniqueSongs);
       } else {
         toast.error("Failed to fetch recently played songs: " + data.msg);
       }
@@ -187,7 +197,15 @@ function AppContent() {
       });
       const data = await response.json();
       if (data.success) {
-        setRecentlyPlayed(data.recentlyPlayed);
+        // Update the local state to ensure uniqueness
+        setRecentlyPlayed(prevSongs => {
+          // Filter out the old instance of the song
+          const filteredSongs = prevSongs.filter(item => 
+            item.title !== song.title || item.artist !== song.artist
+          );
+          // Add the new song to the beginning of the list
+          return [song, ...filteredSongs];
+        });
       }
     } catch (error) {
       console.error("Error saving song to recently played:", error);
@@ -633,8 +651,8 @@ function AppContent() {
       return false;
     }
   };
-  
-  // NEW FUNCTION: This handler is a wrapper for adding a song to an existing list.
+  
+  // NEW FUNCTION: This handler is a wrapper for adding a song to an existing list.
   const handleAddSongToExistingPlaylist = (playlistName) => {
     if (songList.length > 0) {
       addSongToPlaylist(playlistName, songList[currentSongIndex]);
