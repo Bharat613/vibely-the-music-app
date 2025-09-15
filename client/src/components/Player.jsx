@@ -56,6 +56,7 @@ const Player = ({
         
         <div className="player-info">
           <h2 className="player-song-title">{currentSong?.title}</h2>
+          {/* <h3 className="player-song-artist">{currentSong?.artist}</h3> */}
           <h3 className="player-song-artist">{currentSong?.movie}</h3>
           <p className="player-song-album">{currentSong?.album}</p>
         </div>
