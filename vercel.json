@@ -2,35 +2,24 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/serverless"
+      "destination": "/server/index.js"
     },
     {
       "source": "/(.*)",
-      "destination": "/static/$1"
+      "destination": "/index.html"
     }
   ],
   "builds": [
+    {
+      "src": "server/index.js",
+      "use": "@vercel/node"
+    },
     {
       "src": "client/package.json",
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist"
       }
-    },
-    {
-      "src": "server/index.js",
-      "use": "@vercel/node",
-      "dest": "/api/serverless"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/serverless",
-      "dest": "server/index.js"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "client/dist/$1"
     }
   ]
 }
