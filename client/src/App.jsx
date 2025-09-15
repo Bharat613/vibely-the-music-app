@@ -12,9 +12,8 @@ import Player from "./components/Player";
 import MiniPlayer from "./components/MiniPlayer";
 import PlaylistSelector from "./components/PlaylistSelector";
 
-// These are no longer needed on the frontend since the backend will handle them
 const SAAVN_API_URL = import.meta.env.VITE_SAAVN_API_URL;
-const ITUNES_API_URL = import.meta.env.VITE_ITUNES_API_URL;
+// ITUNES_API_URL IS REMOVED as it's no longer used
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 function AppContent() {
@@ -40,7 +39,6 @@ function AppContent() {
   const [recentlyPlayed, setRecentlyPlayed] = useState([]);
   const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
   
-  // NEW STATE for dynamic trending songs
   const [trendingSongs, setTrendingSongs] = useState([]);
 
   const audioRef = useRef(null);
@@ -55,7 +53,6 @@ function AppContent() {
       setCurrentSongIndex(parseInt(storedSongIndex, 10));
     }
 
-    // NEW FETCH CALL for trending songs
     const fetchTrendingSongs = async () => {
       try {
         const response = await fetch(`${BACKEND_URL}/api/trending`);
@@ -84,8 +81,6 @@ function AppContent() {
       navigate("/");
     }
   }, [location.pathname, navigate]);
-
-  // REMOVED: The static trendingSongs array is no longer needed here.
 
   const handleShareSong = async (song) => {
     if (!song) {
@@ -158,7 +153,6 @@ function AppContent() {
       const response = await fetch(`${BACKEND_URL}/api/recently-played/${userEmail}`);
       const data = await response.json();
       if (data.success) {
-        // Filter out duplicates from the fetched list
         const uniqueSongs = [];
         const seen = new Set();
         data.recentlyPlayed.forEach(song => {
@@ -187,13 +181,10 @@ function AppContent() {
       });
       const data = await response.json();
       if (data.success) {
-        // Update the local state to ensure uniqueness
         setRecentlyPlayed(prevSongs => {
-          // Filter out the old instance of the song
           const filteredSongs = prevSongs.filter(item => 
             item.title !== song.title || item.artist !== song.artist
           );
-          // Add the new song to the beginning of the list
           return [song, ...filteredSongs];
         });
       }
@@ -377,21 +368,8 @@ function AppContent() {
     }
   };
 
-  const fetchSongImage = async (songTitle, artistName) => {
-    try {
-      const searchTerm = artistName ? `${songTitle} ${artistName}` : songTitle;
-      const res = await fetch(`${ITUNES_API_URL}?term=${encodeURIComponent(searchTerm)}&entity=song&limit=1`);
-      if (!res.ok) throw new Error(`iTunes API request failed: ${res.status}`);
-      const data = await res.json();
-      if (data.results && data.results.length > 0) {
-        return data.results[0].artworkUrl100.replace("100x100", "500x500");
-      }
-      return "/veebly.png";
-    } catch (err) {
-      console.error("iTunes fetch error:", err);
-      return "/veebly.png";
-    }
-  };
+  // REMOVED: This function is no longer needed since we get images from Saavn.
+  // const fetchSongImage = async (songTitle, artistName) => { ... };
 
   const fetchSong = async (name) => {
     try {
@@ -399,19 +377,24 @@ function AppContent() {
       const data = await res.json();
 
       if (data.success && data.data?.results?.length > 0) {
-        const songs = await Promise.all(
-          data.data.results.map(async (song) => {
-            const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
-            const img = await fetchSongImage(cleanedTitle, song.primaryArtists);
-            return {
-              title: cleanedTitle,
-              artist: song.primaryArtists,
-              url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
-              image: img,
-              album: song.album?.name || "Unknown Album",
-            };
-          })
-        );
+        const songs = data.data.results.map((song) => {
+          const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
+          
+          // MODIFIED: Use the image from Saavn API
+          let imageUrl = song.image?.[2]?.url || song.image?.[1]?.url || song.image?.[0]?.url;
+          // OPTIONAL: Request a higher resolution image by replacing the size in the URL
+          if (imageUrl) {
+            imageUrl = imageUrl.replace('150x150', '500x500');
+          }
+
+          return {
+            title: cleanedTitle,
+            artist: song.primaryArtists,
+            url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
+            image: imageUrl || "/veebly.png", // Use default if no image is found
+            album: song.album?.name || "Unknown Album",
+          };
+        });
         setSongList(songs);
         setCurrentSongIndex(0);
         setSuggestions([]);
@@ -474,7 +457,6 @@ function AppContent() {
     }
   };
 
-  // Simplified and corrected handleSongEnd function
   const handleSongEnd = () => {
     if (songList.length > 1) {
       nextSong();
@@ -581,7 +563,6 @@ function AppContent() {
     setShowPlaylistSelector(true);
   };
 
-  // NEW HANDLER: This function is for the Home page. It only creates a playlist.
   const handleCreateEmptyPlaylist = async (newPlaylistName) => {
     if (!currentUser) {
       toast.error("Please log in to create a playlist.");
@@ -609,7 +590,6 @@ function AppContent() {
     }
   };
 
-  // MODIFIED HANDLER: This function is for the Player. It creates a list and adds the song.
   const handleCreateAndAddSong = async (newPlaylistName) => {
     if (!currentUser || songList.length === 0) {
       toast.error("Please log in and play a song to add.");
@@ -642,14 +622,13 @@ function AppContent() {
     }
   };
   
-  // NEW FUNCTION: This handler is a wrapper for adding a song to an existing list.
   const handleAddSongToExistingPlaylist = (playlistName) => {
     if (songList.length > 0) {
       addSongToPlaylist(playlistName, songList[currentSongIndex]);
     } else {
       toast.error("No song is currently playing to add to a playlist.");
     }
-    setShowPlaylistSelector(false); // Close the selector after selection
+    setShowPlaylistSelector(false);
   };
 
   const onAddToLikedSongsClick = (song) => {
@@ -736,7 +715,7 @@ function AppContent() {
                       navigate("/playlist");
                     }}
                     onDeletePlaylist={handleDeletePlaylist}
-                    trendingSongs={trendingSongs} // PASSED THE NEW STATE HERE
+                    trendingSongs={trendingSongs}
                     onCreatePlaylistClick={handleOpenPlaylistSelector}
                   />
                 </div>
@@ -822,7 +801,7 @@ function AppContent() {
       {showPlaylistSelector && (
         <PlaylistSelector
           playlists={playlists}
-          onAddToList={handleAddSongToExistingPlaylist} // USE THE NEW WRAPPER HERE
+          onAddToList={handleAddSongToExistingPlaylist}
           onNewList={location.pathname === '/' ? handleCreateEmptyPlaylist : handleCreateAndAddSong}
           onClose={() => setShowPlaylistSelector(false)}
         />
