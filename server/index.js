@@ -215,4 +215,4 @@ app.delete('/api/playlists', async (req, res) => {
     }
 });
 
-module.exports = app;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
