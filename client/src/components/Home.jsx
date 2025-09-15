@@ -5,7 +5,7 @@ import './Home.css';
 const Home = ({ recentSongs, playlists, playFromList, onPlaylistClick, onDeletePlaylist, trendingSongs, newReleases, onCreatePlaylistClick }) => {
   const likedSongs = playlists.find(p => p.name === "Liked Songs");
   const otherPlaylists = playlists.filter(p => p.name !== "Liked Songs");
-  const limitedRecentSongs = recentSongs.slice(0, 8);
+  const limitedRecentSongs = recentSongs.slice(0, 11);
 
   return (
     <div className="home-screen">
