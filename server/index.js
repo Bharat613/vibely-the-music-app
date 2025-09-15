@@ -81,6 +81,12 @@ app.post('/api/login', async (req, res) => {
 // A simple static list of trending songs on the server
 // You can manually update this list without changing the frontend
 const trendingSongsList = [
+     {
+    tile:'Bombay Ki Raanu',
+    movie:'Private Song',
+    image:'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/82/40/8a/82408aa6-8d15-bd9d-bcd4-9819b2c3e012/cover.jpg/500x500bb.jpg',
+    url:process.env.SONG_URL_BOMBAY,
+  },
   {
     title: 'Kurchi Madathapetti',
     movie: 'Guntur Kaaram',
@@ -111,6 +117,7 @@ const trendingSongsList = [
     image: 'https://c.saavncdn.com/957/Koyila-Telugu-2025-20250522020441-500x500.jpg',
     url: process.env.SONG_URL_KOYILA, // Reference the new env variable
   },
+ 
 ];
 
 // Existing endpoint to provide trending songs
