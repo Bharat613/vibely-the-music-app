@@ -1,27 +1,76 @@
+// client/src/components/Home.jsx
 import React from 'react';
 import { FaHeart, FaTrash, FaPlus, FaPlay } from 'react-icons/fa';
 import './Home.css';
 
-const Home = ({ recentSongs, playlists, playFromList, onPlaylistClick, onDeletePlaylist, trendingSongs, newReleases, onCreatePlaylistClick }) => {
-  const likedSongs = playlists.find(p => p.name === "Liked Songs");
-  const otherPlaylists = playlists.filter(p => p.name !== "Liked Songs");
-  const limitedRecentSongs = recentSongs.slice(0, 11);
+// Reusable component for rendering song lists
+const SongSection = ({ title, songs, playFromList }) => {
+  // Add a robust check to ensure `songs` is a valid array
+  if (!songs || !Array.isArray(songs) || songs.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="section">
+      <h2 className="section-title">{title}</h2>
+      <div className="song-list">
+        {songs.map((song, index) => (
+          song && ( // Check if the song object itself is valid
+            <div key={`song-${title}-${index}`} className="song-item" onClick={() => playFromList(song)}>
+              <img src={song.image || ''} alt={song.title || 'Song Image'} />
+              <h4>{song.title || 'Unknown Title'}</h4>
+              {/* <p>{song.artist || song.movie || 'Unknown Artist'}</p> */}
+            </div>
+          )
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const Home = ({
+  recentSongs,
+  playlists,
+  playFromList,
+  onPlaylistClick,
+  onDeletePlaylist,
+  trendingSongs,
+  onCreatePlaylistClick,
+  featuredLists,
+  onFeaturedListClick
+}) => {
+  // Use a default empty array if the prop is null or undefined
+  const safePlaylists = playlists || [];
+  const safeFeaturedLists = featuredLists || [];
+
+  const likedSongs = safePlaylists.find(p => p.name === "Liked Songs");
+  const otherPlaylists = safePlaylists.filter(p => p.name !== "Liked Songs");
+  const limitedRecentSongs = recentSongs ? recentSongs.slice(0, 11) : [];
 
   return (
     <div className="home-screen">
 
-      {/* New Releases Section */}
-      {newReleases && newReleases.length > 0 && (
-        <div className="section">
-          <h2 className="section-title">New Releases</h2>
+      <SongSection
+        title="Trending Songs"
+        songs={trendingSongs}
+        playFromList={playFromList}
+      />
+
+      {/* NEW: Featured Lists Section */}
+      {safeFeaturedLists.length > 0 && (
+        <div className="section featured-lists-section">
+          <h2 className="section-title">Featured Lists</h2>
           <div className="song-list">
-            {newReleases.map((song, index) => (
-              // FIX: Add a check for a valid song object
-              song && (
-                <div key={`new-release-${index}`} className="song-item" onClick={() => playFromList(song)}>
-                  <img src={song.image} alt={song.title} />
-                  <h4>{song.title}</h4>
-                  <p>{song.artist}</p>
+            {safeFeaturedLists.map((playlist, index) => (
+              playlist && (
+                <div
+                  key={`featured-list-${index}`}
+                  className="song-item"
+                  onClick={() => onFeaturedListClick(playlist)}
+                >
+                  <img src={playlist.image || ''} alt={playlist.name || 'Featured List'} />
+                  <h4>{playlist.name || 'Untitled List'}</h4>
+                  
                 </div>
               )
             ))}
@@ -29,49 +78,16 @@ const Home = ({ recentSongs, playlists, playFromList, onPlaylistClick, onDeleteP
         </div>
       )}
 
-      {/* Trending Songs Section */}
-      {trendingSongs && trendingSongs.length > 0 && (
-        <div className="section">
-          <h2 className="section-title">Trending Songs</h2>
-          <div className="song-list">
-            {trendingSongs.map((song, index) => (
-              // FIX: Add a check for a valid song object
-              song && (
-                <div key={`trending-${index}`} className="song-item" onClick={() => playFromList(song)}>
-                  <img src={song.image} alt={song.title} />
-                  <h4>{song.title}</h4>
-                  <p>{song.movie}</p>
-                </div>
-              )
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recently Played Section */}
-      {limitedRecentSongs.length > 0 && (
-        <div className="section">
-          <h2 className="section-title">Recently Played</h2>
-          <div className="song-list">
-            {limitedRecentSongs.map((song, index) => (
-              // FIX: Add a check for a valid song object
-              song && (
-                <div key={`recent-${index}`} className="song-item" onClick={() => playFromList(song)}>
-                  <img src={song.image} alt={song.title} />
-                  <h4>{song.title}</h4>
-                  <p>{song.artist}</p>
-                </div>
-              )
-            ))}
-          </div>
-        </div>
-      )}
+      <SongSection
+        title="Recently Played"
+        songs={limitedRecentSongs}
+        playFromList={playFromList}
+      />
 
       {/* Your Playlists Section */}
       <div className="section">
         <h2 className="section-title">Your Playlists</h2>
         <div className="playlist-list-container">
-          {/* Liked Songs Card */}
           {likedSongs && (
             <div className="playlist-card" onClick={() => onPlaylistClick(likedSongs)}>
               <div className="playlist-card-image">
@@ -79,40 +95,39 @@ const Home = ({ recentSongs, playlists, playFromList, onPlaylistClick, onDeleteP
               </div>
               <div className="playlist-card-info">
                 <h4>Liked Songs</h4>
-                <p>{likedSongs.songs.length} songs</p>
+                <p>{likedSongs.songs?.length || 0} songs</p>
               </div>
             </div>
           )}
 
-          {/* Dynamically Created Playlists */}
           {otherPlaylists.map((playlist, index) => (
-            <div key={index} className="playlist-card">
-              <div
-                className="playlist-card-image"
-                onClick={() => onPlaylistClick(playlist)}
-              >
-                {playlist.songs.length > 0 && playlist.songs[0] ? (
-                  <img src={playlist.songs[0].image} alt={playlist.name} />
-                ) : (
-                  <FaPlay size={48} color="#fff" />
-                )}
-              </div>
-              <div className="playlist-card-info">
-                <h4>{playlist.name}</h4>
-                <p>{playlist.songs.length} songs</p>
-              </div>
+            playlist && (
+              <div key={index} className="playlist-card">
+                <div className="playlist-card-image" onClick={() => onPlaylistClick(playlist)}>
+                  {playlist.songs && playlist.songs.length > 0 && playlist.songs[0] ? (
+                    <img src={playlist.songs[0].image || ''} alt={playlist.name || 'Playlist Image'} />
+                  ) : (
+                    <FaPlay size={48} color="#fff" />
+                  )}
+                </div>
+                <div className="playlist-card-info">
+                  <h4>{playlist.name || 'Untitled Playlist'}</h4>
+                  <p>{playlist.songs?.length || 0} songs</p>
+                </div>
 
-              {/* Delete Button */}
-              <button
-                className="delete-btn"
-                onClick={() => onDeletePlaylist(playlist)}
-              >
-                <FaTrash size={14} />
-              </button>
-            </div>
+                <button
+                  className="delete-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeletePlaylist(playlist);
+                  }}
+                >
+                  <FaTrash size={14} />
+                </button>
+              </div>
+            )
           ))}
 
-          {/* New Playlist Card */}
           <div className="playlist-card add-playlist-card" onClick={onCreatePlaylistClick}>
             <div className="playlist-card-image">
               <FaPlus size={48} color="#fff" />
@@ -123,7 +138,7 @@ const Home = ({ recentSongs, playlists, playFromList, onPlaylistClick, onDeleteP
           </div>
         </div>
 
-        {playlists.length === 0 && (
+        {safePlaylists.length === 0 && (
           <p>You have no playlists yet. Add a song from the player to create one!</p>
         )}
       </div>

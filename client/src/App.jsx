@@ -5,16 +5,23 @@ import "./App.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaSearch, FaTrash } from "react-icons/fa";
-import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate, useParams } from "react-router-dom"; 
+
 import Auth from "./components/Auth";
 import Home from "./components/Home";
 import Player from "./components/Player";
 import MiniPlayer from "./components/MiniPlayer";
 import PlaylistSelector from "./components/PlaylistSelector";
+import SongListViewer from "./components/SongListViewer"; 
 
 const SAAVN_API_URL = import.meta.env.VITE_SAAVN_API_URL;
-// ITUNES_API_URL IS REMOVED as it's no longer used
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+// Helper function to create a URL-friendly slug
+const createSlug = (str) => {
+  if (!str) return '';
+  return str.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+};
 
 function AppContent() {
   const navigate = useNavigate();
@@ -40,6 +47,7 @@ function AppContent() {
   const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
   
   const [trendingSongs, setTrendingSongs] = useState([]);
+  const [featuredLists, setFeaturedLists] = useState([]); 
 
   const audioRef = useRef(null);
   const searchContainerRef = useRef(null);
@@ -62,12 +70,49 @@ function AppContent() {
         }
       } catch (error) {
         console.error("Failed to fetch trending songs:", error);
-      } finally {
-        setIsLoading(false);
       }
+    };
+    
+    const fetchFeaturedLists = async () => {
+        const lists = [
+          { name: 'Telugu Latest Songs', query: 'telugu latest songs', image: '/images/telugu-latest-art.jpg' },
+          { name: 'Telugu Old Songs', query: 'telugu old songs', image: '/images/telugu-old-art.jpg' },
+          { name: 'Best Of 2024 Dance Hits', query: 'Best Of telugu 2024 Dance Hits', image: '/images/best_2024.jpg' },
+          { name: 'Devotional Songs', query: 'telugu devotional songs', image: '/images/devotional-art.jpg' },
+        ];
+
+        const fetchedLists = await Promise.all(lists.map(async (list) => {
+          try {
+              const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(list.query)}&limit=30`);
+              const data = await res.json();
+              if (data.success && data.data?.results?.length > 0) {
+                  const songs = data.data.results.map((song) => {
+                      const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
+                      let imageUrl = song.image?.[2]?.url || song.image?.[1]?.url || song.image?.[0]?.url;
+                      if (imageUrl) {
+                          imageUrl = imageUrl.replace('150x150', '500x500');
+                      }
+                      return {
+                          title: cleanedTitle,
+                          artist: song.primaryArtists,
+                          url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
+                          image: imageUrl || "/veebly.png",
+                          album: song.album?.name || "Unknown Album",
+                      };
+                  });
+                  return { ...list, id: createSlug(list.name), songs: songs };
+              }
+              return { ...list, id: createSlug(list.name), songs: [] };
+          } catch (err) {
+              console.error(`Failed to fetch songs for featured list '${list.name}':`, err);
+              return { ...list, id: createSlug(list.name), songs: [] };
+          }
+        }));
+        setFeaturedLists(fetchedLists);
     };
 
     fetchTrendingSongs();
+    fetchFeaturedLists();
 
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -368,9 +413,6 @@ function AppContent() {
     }
   };
 
-  // REMOVED: This function is no longer needed since we get images from Saavn.
-  // const fetchSongImage = async (songTitle, artistName) => { ... };
-
   const fetchSong = async (name) => {
     try {
       const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(name)}&bitrate=320`);
@@ -379,10 +421,7 @@ function AppContent() {
       if (data.success && data.data?.results?.length > 0) {
         const songs = data.data.results.map((song) => {
           const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
-          
-          // MODIFIED: Use the image from Saavn API
           let imageUrl = song.image?.[2]?.url || song.image?.[1]?.url || song.image?.[0]?.url;
-          // OPTIONAL: Request a higher resolution image by replacing the size in the URL
           if (imageUrl) {
             imageUrl = imageUrl.replace('150x150', '500x500');
           }
@@ -391,7 +430,7 @@ function AppContent() {
             title: cleanedTitle,
             artist: song.primaryArtists,
             url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
-            image: imageUrl || "/veebly.png", // Use default if no image is found
+            image: imageUrl || "/veebly.png",
             album: song.album?.name || "Unknown Album",
           };
         });
@@ -408,7 +447,6 @@ function AppContent() {
     }
   };
 
-  // Helper function to play the current song
   const playCurrentSong = () => {
     if (audioRef.current && songList.length > 0) {
       audioRef.current.src = songList[currentSongIndex].url;
@@ -418,7 +456,6 @@ function AppContent() {
     }
   };
 
-  // useEffect to handle changes to the song list or current song index
   useEffect(() => {
     if (songList.length > 0) {
       playCurrentSong();
@@ -552,6 +589,15 @@ function AppContent() {
       setSongList([song]);
       setCurrentSongIndex(0);
       navigate("/player");
+    }
+  };
+  
+  // Update this function to use the playlist's ID for navigation
+  const handleFeaturedListClick = (playlist) => {
+    if (playlist && playlist.id) {
+      navigate(`/featured/${playlist.id}`);
+    } else {
+      toast.error("Featured list not found!");
     }
   };
 
@@ -717,6 +763,8 @@ function AppContent() {
                     onDeletePlaylist={handleDeletePlaylist}
                     trendingSongs={trendingSongs}
                     onCreatePlaylistClick={handleOpenPlaylistSelector}
+                    featuredLists={featuredLists}
+                    onFeaturedListClick={handleFeaturedListClick}
                   />
                 </div>
               </>
@@ -790,6 +838,14 @@ function AppContent() {
                 <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
             </div>
           )
+        } />
+        {/* FIX: Pass featuredLists and the play function as props */}
+        <Route path="/featured/:listId" element={
+            <SongListViewer featuredLists={featuredLists} playSongFromList={(songs, songIndex) => {
+              setSongList(songs);
+              setCurrentSongIndex(songIndex);
+              navigate("/player");
+            }} />
         } />
         <Route path="*" element={
           <div className="not-found-container">
