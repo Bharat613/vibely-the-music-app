@@ -9,7 +9,7 @@ const Auth = ({ isLoginView, setIsLoginView, email, setEmail, password, setPassw
           <input
             type="email"
             placeholder="Email"
-            value={email}
+           value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />

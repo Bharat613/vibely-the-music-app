@@ -4,15 +4,16 @@ import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaSearch, FaTrash } from "react-icons/fa";
-import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate, useParams } from "react-router-dom"; 
+import { FaSearch, FaTrash, FaUserCircle } from "react-icons/fa";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 
 import Auth from "./components/Auth";
 import Home from "./components/Home";
 import Player from "./components/Player";
 import MiniPlayer from "./components/MiniPlayer";
 import PlaylistSelector from "./components/PlaylistSelector";
-import SongListViewer from "./components/SongListViewer"; 
+import SongListViewer from "./components/SongListViewer";
+import Profile from "./components/Profile";
 
 const SAAVN_API_URL = import.meta.env.VITE_SAAVN_API_URL;
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
@@ -47,7 +48,7 @@ function AppContent() {
   const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
   
   const [trendingSongs, setTrendingSongs] = useState([]);
-  const [featuredLists, setFeaturedLists] = useState([]); 
+  const [featuredLists, setFeaturedLists] = useState([]);
 
   const audioRef = useRef(null);
   const searchContainerRef = useRef(null);
@@ -227,7 +228,7 @@ function AppContent() {
       const data = await response.json();
       if (data.success) {
         setRecentlyPlayed(prevSongs => {
-          const filteredSongs = prevSongs.filter(item => 
+          const filteredSongs = prevSongs.filter(item =>
             item.title !== song.title || item.artist !== song.artist
           );
           return [song, ...filteredSongs];
@@ -747,8 +748,9 @@ function AppContent() {
                       </ul>
                     )}
                   </div>
-                  <button onClick={handleLogout} className="auth-button logout-button">
-                    Logout
+                  {/* The new Profile Button */}
+                  <button onClick={() => navigate("/profile")} className="profile-button">
+                    <FaUserCircle size={24} />
                   </button>
                 </div>
                 <div className="main-content">
@@ -773,6 +775,20 @@ function AppContent() {
             )
           }
         />
+        {/* Add the new route for the profile page */}
+        <Route
+          path="/profile"
+          element={
+            isLoggedIn ? (
+              <Profile
+                currentUser={currentUser}
+                handleLogout={handleLogout}
+              />
+            ) : (
+              <Navigate to="/auth" replace />
+            )
+          }
+        />
         <Route path="/player" element={
           songList.length > 0 ? (
             <Player
@@ -792,7 +808,6 @@ function AppContent() {
               onAddToListClick={handleOpenPlaylistSelector}
               onAddToLikedSongsClick={onAddToLikedSongsClick}
               onShareClick={handleShareSong}
-              setActiveView={() => navigate("/")}
               showHomeButton={true}
             />
           ) : (

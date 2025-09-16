@@ -124,13 +124,7 @@ body {
   color: var(--primary-text);
 }
 
-.logout-button {
-  background: none;
-  border: none;
-  color: var(--subtle-text);
-  font-size: 0.9rem;
-  cursor: pointer;
-}
+
 
 .main-content {
   flex-grow: 1;
@@ -689,15 +683,7 @@ body {
     color: var(--text-color);
     font-size: 1rem;
   }
-  .logout-button {
-    background: none;
-    width: 70px;
-    color: #1DB954;
-    font-size: 0.75rem;
-    cursor: pointer;
-    padding: 9px;
-    margin: 0%;
-  }
+ 
 }
 
 @media (max-width: 600px) {
@@ -796,4 +782,12 @@ body {
 .hidden {
   opacity: 0;
   visibility: hidden;
+}
+.profile-button{
+  background: none;
+  color: white;
+  border: none;
+  box-shadow: 0 0 20px #0f7a36;
+  border-radius: 50%;
+  padding: 0 !important;
 }

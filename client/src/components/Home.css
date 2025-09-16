@@ -4,7 +4,11 @@
   gap: 1rem;
   justify-items: center;
 }
+.section-title{
+  color: rgb(236, 232, 227) !important;
+    font-size: 25px !important;
 
+}
 /* Playlist Card */
 .playlist-card {
   position: relative; /* for delete button */
@@ -98,6 +102,11 @@
   .playlist-card-info h4 {
     max-width: 110px;
   }
+  .section-title{
+  color: rgb(236, 232, 227) !important;
+    font-size: 20px !important;
+
+}
 }
 
 /* Desktop (≥1024px: bigger cards, side by side) */
@@ -112,8 +121,6 @@
   .playlist-card-info h4 {
     max-width: 160px;
   }
+ 
 }
 
-.section-title{
-  color: rgb(236, 232, 227) !important;
-}
