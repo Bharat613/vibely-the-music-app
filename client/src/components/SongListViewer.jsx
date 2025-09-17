@@ -1,57 +1,59 @@
-// client/src/components/SongListViewer.jsx
-
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import './SongListViewer.css'; // Make sure you have this CSS file
+import { FaArrowLeft, FaTrash } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import './SongListViewer.css';
 
-function SongListViewer({ featuredLists, playSongFromList }) {
-  const { listId } = useParams();
+const SongListViewer = ({ list, playSongFromList, onDeleteSong, isUserPlaylist }) => {
   const navigate = useNavigate();
 
-  // Key change #1: Defensive check for the featuredLists prop.
-  // This prevents the "Cannot read properties of undefined (reading 'find')" error.
-  if (!featuredLists || !Array.isArray(featuredLists) || featuredLists.length === 0) {
+  if (!list || !list.songs || list.songs.length === 0) {
     return (
-      <div className="loading-container">
-        <p>Loading featured lists...</p>
+      <div className="song-list-viewer-container no-list">
+        <button className="back-button" onClick={() => navigate(-1)}><FaArrowLeft /></button>
+        <p className="no-list-text">This list is empty or could not be loaded.</p>
       </div>
     );
   }
 
-  // Key change #2: Find the correct featured list using the unique `id` property
-  // that was created in App.jsx (using the createSlug function).
-  const list = featuredLists.find(l => l.id === listId);
-
-  if (!list) {
-    return (
-      <div className="no-playlist-container">
-        <p>Featured list not found. Please go back to the home page.</p>
-        <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
-      </div>
-    );
-  }
+  const handlePlaySong = (song, index) => {
+    // Pass the entire song list and the selected song's index
+    playSongFromList(list.songs, index);
+  };
 
   return (
     <div className="song-list-viewer-container">
-      <button className="back-button" onClick={() => navigate("/")}><i className="fa-solid fa-backward"></i></button>
-      <h2 className="section-title">{list.name}</h2>
-      {list.songs.length > 0 ? (
-        <ul className="song-list-grid">
+      <div className="song-list-viewer-header">
+        <button className="back-button" onClick={() => navigate(-1)}>
+          <FaArrowLeft size={24} />
+        </button>
+        <h2 className="section-title">{list.name}</h2>
+      </div>
+      
+      <div className="songs-list-scrollable">
+        <ul className="playlist-list">
           {list.songs.map((song, index) => (
-            <li key={index} className="song-list-item" onClick={() => playSongFromList(list.songs, index)}>
-              <img src={song.image} alt={song.title} className="song-image" />
-              <div className="song-info">
-                <h4>{song.title}</h4>
-                <p>{song.artist}</p>
+            <li key={index} className="playlist-item">
+              <div className="playlist-song-info" onClick={() => handlePlaySong(song, index)}>
+                <img src={song.image || ''} alt={song.title || 'Song Image'} />
+                <div className="playlist-info">
+                  <h4>{song.title || 'Unknown Title'}</h4>
+                  <p>{song.artist || 'Unknown Artist'}</p>
+                </div>
               </div>
+              {isUserPlaylist && (
+                <button
+                  className="remove-song-button"
+                  onClick={() => onDeleteSong(song)}
+                >
+                  <FaTrash />
+                </button>
+              )}
             </li>
           ))}
         </ul>
-      ) : (
-        <p>No songs available for this list.</p>
-      )}
+      </div>
     </div>
   );
-}
+};
 
 export default SongListViewer;

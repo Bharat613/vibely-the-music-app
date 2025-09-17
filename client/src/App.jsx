@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaSearch, FaTrash, FaUserCircle } from "react-icons/fa";
+import { FaSearch, FaTrash, FaUserCircle, FaArrowLeft } from "react-icons/fa";
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
 
 import Auth from "./components/Auth";
@@ -38,17 +38,28 @@ function AppContent() {
   const [duration, setDuration] = useState(0);
 
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("userToken"));
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null); // Initial state is null
   const [isLoginView, setIsLoginView] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [playlists, setPlaylists] = useState([]);
-  const [selectedPlaylist, setSelectedPlaylist] = useState(null);
-  const [recentlyPlayed, setRecentlyPlayed] = useState([]);
+  const [playlists, setPlaylists] = useState([]); // Initial state is an empty array
+  
+  const [currentViewingList, setCurrentViewingList] = useState(null); // Initial state is null
+
+  const [recentlyPlayed, setRecentlyPlayed] = useState([]); // Initial state is an empty array
   const [showPlaylistSelector, setShowPlaylistSelector] = useState(false);
   
-  const [trendingSongs, setTrendingSongs] = useState([]);
-  const [featuredLists, setFeaturedLists] = useState([]);
+  const [trendingSongs, setTrendingSongs] = useState([]); // Initial state is an empty array
+  const [featuredLists, setFeaturedLists] = useState([]); // Initial state is an empty array
+
+  const famousSingers = [
+    { name: 'Anirudh Ravichander', query: 'Anirudh Ravichander songs', image: '/images/anirudh-art.jpg' },
+    { name: 'Anurag Kulkarni', query: 'Anurag Kulkarni songs', image: '/images/anuragkulkarni-art.jpg' },
+        { name: 'Sid Sriram', query: 'Sid Sriram songs', image: '/images/sidsriram-art.jpg' },
+    { name: 'Shreya Ghoshal', query: 'Shreya Ghoshal songs', image: '/images/shreyaghoshal-art.jpg' },
+    
+    { name: 'K. S. Chithra', query: 'K. S. Chithra songs', image: '/images/chithra-art.jpg' },
+  ];
 
   const audioRef = useRef(null);
   const searchContainerRef = useRef(null);
@@ -78,7 +89,7 @@ function AppContent() {
         const lists = [
           { name: 'Telugu Latest Songs', query: 'telugu latest songs', image: '/images/telugu-latest-art.jpg' },
           { name: 'Telugu Old Songs', query: 'telugu old songs', image: '/images/telugu-old-art.jpg' },
-          { name: 'Best Of 2024 Dance Hits', query: 'Best Of telugu 2024 Dance Hits', image: '/images/best_2024.jpg' },
+          { name: 'Best of 2024 Dance Hits', query: 'Best of telugu 2024 Dance Hits', image: '/images/best_2024.jpg' },
           { name: 'Devotional Songs', query: 'telugu devotional songs', image: '/images/devotional-art.jpg' },
         ];
 
@@ -87,21 +98,21 @@ function AppContent() {
               const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(list.query)}&limit=30`);
               const data = await res.json();
               if (data.success && data.data?.results?.length > 0) {
-                  const songs = data.data.results.map((song) => {
-                      const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
-                      let imageUrl = song.image?.[2]?.url || song.image?.[1]?.url || song.image?.[0]?.url;
-                      if (imageUrl) {
-                          imageUrl = imageUrl.replace('150x150', '500x500');
-                      }
-                      return {
-                          title: cleanedTitle,
-                          artist: song.primaryArtists,
-                          url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
-                          image: imageUrl || "/veebly.png",
-                          album: song.album?.name || "Unknown Album",
-                      };
-                  });
-                  return { ...list, id: createSlug(list.name), songs: songs };
+                const songs = data.data.results.map((song) => {
+                    const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
+                    let imageUrl = song.image?.[2]?.url || song.image?.[1]?.url || song.image?.[0]?.url;
+                    if (imageUrl) {
+                        imageUrl = imageUrl.replace('150x150', '500x500');
+                    }
+                    return {
+                        title: cleanedTitle,
+                        artist: song.primaryArtists,
+                        url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
+                        image: imageUrl || "/veebly.png",
+                        album: song.album?.name || "Unknown Album",
+                    };
+                });
+                return { ...list, id: createSlug(list.name), songs: songs };
               }
               return { ...list, id: createSlug(list.name), songs: [] };
           } catch (err) {
@@ -396,7 +407,7 @@ function AppContent() {
             return playlist;
           });
 
-          setSelectedPlaylist(currentSelected => {
+          setCurrentViewingList(currentSelected => {
             if (currentSelected?.name === playlistName) {
               const updatedPlaylist = updatedPlaylists.find(p => p.name === playlistName);
               return updatedPlaylist;
@@ -571,8 +582,13 @@ function AppContent() {
     }
   };
 
+  const viewSongList = (list) => {
+    setCurrentViewingList(list);
+    navigate("/view-list");
+  };
+
   const playFromList = (song) => {
-    const currentPlaylist = playlists.find(p => p.name === selectedPlaylist?.name);
+    const currentPlaylist = playlists.find(p => p.name === currentViewingList?.name);
     if (currentPlaylist) {
       const songIndex = currentPlaylist.songs.findIndex(
         (s) => s.title === song.title && s.artist === song.artist
@@ -593,12 +609,37 @@ function AppContent() {
     }
   };
   
-  // Update this function to use the playlist's ID for navigation
-  const handleFeaturedListClick = (playlist) => {
-    if (playlist && playlist.id) {
-      navigate(`/featured/${playlist.id}`);
-    } else {
-      toast.error("Featured list not found!");
+  const handleSingerClick = async (singer) => {
+    // toast.info(`Fetching songs by ${singer.name}...`);
+    try {
+      // const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(singer.query)}&bitrate=320`);
+      // Fetch up to 50 songs by the singer
+const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(singer.query)}&bitrate=320&limit=50`);
+      const data = await res.json();
+      if (data.success && data.data?.results?.length > 0) {
+        const songs = data.data.results.map((song) => {
+          const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
+          let imageUrl = song.image?.[2]?.url || song.image?.[1]?.url || song.image?.[0]?.url;
+          if (imageUrl) {
+            imageUrl = imageUrl.replace('150x150', '500x500');
+          }
+          return {
+            title: cleanedTitle,
+            artist: song.primaryArtists,
+            url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
+            image: imageUrl || "/veebly.png",
+            album: song.album?.name || "Unknown Album",
+          };
+        });
+        const singerList = { name: `${singer.name}'s Hits`, songs: songs };
+        setCurrentViewingList(singerList);
+        navigate("/view-list");
+      } else {
+        toast.error(`❌ Songs by ${singer.name} not found!`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch songs. Please try again.");
     }
   };
 
@@ -748,7 +789,6 @@ function AppContent() {
                       </ul>
                     )}
                   </div>
-                  {/* The new Profile Button */}
                   <button onClick={() => navigate("/profile")} className="profile-button">
                     <FaUserCircle size={24} />
                   </button>
@@ -758,15 +798,14 @@ function AppContent() {
                     recentSongs={recentlyPlayed}
                     playlists={playlists}
                     playFromList={playFromList}
-                    onPlaylistClick={(playlist) => {
-                      setSelectedPlaylist(playlist);
-                      navigate("/playlist");
-                    }}
+                    onPlaylistClick={viewSongList}
                     onDeletePlaylist={handleDeletePlaylist}
                     trendingSongs={trendingSongs}
                     onCreatePlaylistClick={handleOpenPlaylistSelector}
                     featuredLists={featuredLists}
-                    onFeaturedListClick={handleFeaturedListClick}
+                    onFeaturedListClick={viewSongList}
+                    famousSingers={famousSingers}
+                    onSingerClick={handleSingerClick}
                   />
                 </div>
               </>
@@ -775,7 +814,6 @@ function AppContent() {
             )
           }
         />
-        {/* Add the new route for the profile page */}
         <Route
           path="/profile"
           element={
@@ -817,50 +855,24 @@ function AppContent() {
             </div>
           )
         } />
-        <Route path="/playlist" element={
-          selectedPlaylist ? (
-            <div className="playlist-view">
-              <button className="back-button" onClick={() => navigate("/")}><i className="fa-solid fa-backward"></i></button>
-              <h2 className="section-title">{selectedPlaylist?.name}</h2>
-              <ul className="playlist-list">
-                {selectedPlaylist?.songs?.map((song, index) => (
-                  <li key={index} className="playlist-item">
-                    <div className="playlist-song-info" onClick={() => {
-                      playFromList(song);
-                      setSongList(selectedPlaylist.songs);
-                      setCurrentSongIndex(index);
-                      navigate("/player");
-                    }}>
-                      <img src={song.image} alt={song.title} />
-                      <div className="playlist-info">
-                        <h4>{song.title}</h4>
-                        <p>{song.album}</p>
-                      </div>
-                    </div>
-                    <button
-                      className="remove-song-button"
-                      onClick={() => removeSongFromPlaylist(selectedPlaylist.name, song)}
-                    >
-                      <FaTrash />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <Route path="/view-list" element={
+          currentViewingList ? (
+            <SongListViewer
+              list={currentViewingList}
+              playSongFromList={(songs, songIndex) => {
+                setSongList(songs);
+                setCurrentSongIndex(songIndex);
+                navigate("/player");
+              }}
+              onDeleteSong={(songToRemove) => removeSongFromPlaylist(currentViewingList.name, songToRemove)}
+              isUserPlaylist={playlists.some(p => p.name === currentViewingList.name)}
+            />
           ) : (
             <div className="no-playlist-container">
-                <p>No playlist selected. Please choose a playlist from the home page.</p>
+                <p>No list selected. Please choose a list from the home page.</p>
                 <button onClick={() => navigate('/')} className="back-to-home-btn">Go to Home</button>
             </div>
           )
-        } />
-        {/* FIX: Pass featuredLists and the play function as props */}
-        <Route path="/featured/:listId" element={
-            <SongListViewer featuredLists={featuredLists} playSongFromList={(songs, songIndex) => {
-              setSongList(songs);
-              setCurrentSongIndex(songIndex);
-              navigate("/player");
-            }} />
         } />
         <Route path="*" element={
           <div className="not-found-container">

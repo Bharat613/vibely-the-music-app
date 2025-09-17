@@ -1,11 +1,9 @@
-// client/src/components/Home.jsx
 import React from 'react';
 import { FaHeart, FaTrash, FaPlus, FaPlay } from 'react-icons/fa';
 import './Home.css';
 
 // Reusable component for rendering song lists
 const SongSection = ({ title, songs, playFromList }) => {
-  // Add a robust check to ensure `songs` is a valid array
   if (!songs || !Array.isArray(songs) || songs.length === 0) {
     return null;
   }
@@ -15,11 +13,10 @@ const SongSection = ({ title, songs, playFromList }) => {
       <h2 className="section-title">{title}</h2>
       <div className="song-list">
         {songs.map((song, index) => (
-          song && ( // Check if the song object itself is valid
+          song && (
             <div key={`song-${title}-${index}`} className="song-item" onClick={() => playFromList(song)}>
               <img src={song.image || ''} alt={song.title || 'Song Image'} />
               <h4>{song.title || 'Unknown Title'}</h4>
-              {/* <p>{song.artist || song.movie || 'Unknown Artist'}</p> */}
             </div>
           )
         ))}
@@ -37,11 +34,13 @@ const Home = ({
   trendingSongs,
   onCreatePlaylistClick,
   featuredLists,
-  onFeaturedListClick
+  onFeaturedListClick,
+  famousSingers,
+  onSingerClick
 }) => {
-  // Use a default empty array if the prop is null or undefined
   const safePlaylists = playlists || [];
   const safeFeaturedLists = featuredLists || [];
+  const safeFamousSingers = famousSingers || [];
 
   const likedSongs = safePlaylists.find(p => p.name === "Liked Songs");
   const otherPlaylists = safePlaylists.filter(p => p.name !== "Liked Songs");
@@ -56,7 +55,6 @@ const Home = ({
         playFromList={playFromList}
       />
 
-      {/* NEW: Featured Lists Section */}
       {safeFeaturedLists.length > 0 && (
         <div className="section featured-lists-section">
           <h2 className="section-title">Featured Lists</h2>
@@ -70,7 +68,26 @@ const Home = ({
                 >
                   <img src={playlist.image || ''} alt={playlist.name || 'Featured List'} />
                   <h4>{playlist.name || 'Untitled List'}</h4>
-                  
+                </div>
+              )
+            ))}
+          </div>
+        </div>
+      )}
+
+      {safeFamousSingers.length > 0 && (
+        <div className="section famous-singers-section">
+          <h2 className="section-title">Famous Singers</h2>
+          <div className="song-list">
+            {safeFamousSingers.map((singer, index) => (
+              singer && (
+                <div
+                  key={`singer-${index}`}
+                  className="song-item"
+                  onClick={() => onSingerClick(singer)}
+                >
+                  <img src={singer.image || '/images/default-singer-art.png'} alt={singer.name || 'Singer Image'} />
+                  <h4>{singer.name || 'Unknown Singer'}</h4>
                 </div>
               )
             ))}
@@ -84,7 +101,6 @@ const Home = ({
         playFromList={playFromList}
       />
 
-      {/* Your Playlists Section */}
       <div className="section">
         <h2 className="section-title">Your Playlists</h2>
         <div className="playlist-list-container">
