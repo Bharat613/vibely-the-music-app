@@ -566,18 +566,21 @@ body {
   cursor: pointer;
 }
 
+/* ========================================= */
+/* --- MINI PLAYER STYLES (MOBILE FIRST) --- */
+/* ========================================= */
+
 .mini-player-container {
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  background-color: #0539bd;
-  background: linear-gradient(to right,#0636b9,#4379ec);
+  background: linear-gradient(to right, #0636b9, #4379ec);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 20px;
-  color: #fff;
+  padding: 10px 5px;
+  color: hsl(0, 0%, 100%);
   z-index: 99;
   border-top: 1px solid #3e3e3e;
 }
@@ -588,13 +591,14 @@ body {
   cursor: pointer;
   flex-grow: 1;
   overflow: hidden;
+  margin-right: 10px; /* Added some margin for mobile */
 }
 
 .mini-player-image {
-  width: 50px;
-  height: 50px;
+  width: 45px; /* Slightly smaller for mobile */
+  height: 45px;
   border-radius: 5px;
-  margin-right: 15px;
+  margin-right: 10px;
 }
 
 .mini-player-text {
@@ -603,7 +607,7 @@ body {
 
 .mini-player-text h4 {
   margin: 0;
-  font-size: 1em;
+  font-size: 0.9em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -611,7 +615,7 @@ body {
 
 .mini-player-text p {
   margin: 0;
-  font-size: 0.8em;
+  font-size: 0.7em;
   color: #b3b3b3;
   white-space: nowrap;
   overflow: hidden;
@@ -619,7 +623,7 @@ body {
 }
 
 .mini-player-album {
-  font-size: 0.7em;
+  font-size: 0.6em;
   color: #8c8c8c;
   font-style: italic;
 }
@@ -627,26 +631,66 @@ body {
 .mini-player-controls {
   display: flex;
   align-items: center;
+  gap: 8px; /* Spacing between buttons for mobile */
 }
 
 .mini-player-button {
   background: none;
   border: none;
   color: #fff;
-  font-size: 1.5em;
+  font-size: 1.3em; /* Slightly smaller buttons for mobile */
   cursor: pointer;
   transition: color 0.2s;
+  padding: 5px; /* Add padding for easier tapping */
 }
 
 .mini-player-button:hover {
   color: #1db954;
 }
 
-.song-singers {
-  font-style: italic;
-  color: #999;
-  font-size: 0.8em;
+/* ========================================= */
+/* --- DESKTOP STYLES (MIN-WIDTH 768PX) --- */
+/* ========================================= */
+
+@media (min-width: 768px) {
+  .mini-player-container {
+    padding: 15px 50px; /* Increased padding for desktop */
+  }
+
+  .mini-player-song-info {
+    margin-right: 20px;
+  }
+
+  .mini-player-image {
+    width: 50px;
+    height: 50px;
+    margin-right: 15px;
+  }
+
+  .mini-player-text h4 {
+    font-size: 1.1em;
+  }
+
+  .mini-player-text p {
+    font-size: 0.8em;
+  }
+
+  .mini-player-album {
+    font-size: 0.7em;
+  }
+
+  .mini-player-controls {
+    gap: 15px; /* More space between buttons on desktop */
+  }
+  
+  .mini-player-button {
+    font-size: 1.5em; /* Larger buttons on desktop */
+    padding: 8px;
+  }
 }
+
+/* Other CSS styles for the app... */
+/* ... */
 
 /* Media Queries */
 @media (max-width: 768px) {

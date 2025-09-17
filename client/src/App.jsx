@@ -682,6 +682,46 @@ function AppContent() {
     addSongToPlaylist("Liked Songs", song);
   };
 
+  // --- NEW: MOVE MEDIA SESSION LOGIC HERE ---
+  useEffect(() => {
+    if ("mediaSession" in navigator && songList.length > 0) {
+      const currentSong = songList[currentSongIndex];
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentSong?.title || "Unknown Title",
+        artist: currentSong?.artist || "Unknown Artist",
+        album: currentSong?.album || "Unknown Album",
+        artwork: [
+          { src: currentSong?.image || "/veebly.png", sizes: "96x96", type: "image/png" },
+          { src: currentSong?.image || "/veebly.png", sizes: "128x128", type: "image/png" },
+          { src: currentSong?.image || "/veebly.png", sizes: "192x192", type: "image/png" },
+          { src: currentSong?.image || "/veebly.png", sizes: "256x256", type: "image/png" },
+          { src: currentSong?.image || "/veebly.png", sizes: "384x384", type: "image/png" },
+          { src: currentSong?.image || "/veebly.png", sizes: "512x512", type: "image/png" },
+        ],
+      });
+      
+      navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+    }
+  }, [songList, currentSongIndex, isPlaying]);
+
+  useEffect(() => {
+    if ("mediaSession" in navigator) {
+      navigator.mediaSession.setActionHandler("play", playSong);
+      navigator.mediaSession.setActionHandler("pause", pauseSong);
+      navigator.mediaSession.setActionHandler("nexttrack", nextSong);
+      navigator.mediaSession.setActionHandler("previoustrack", prevSong);
+      navigator.mediaSession.setActionHandler("seekbackward", (event) => {
+        const skipTime = event.seekOffset || 10;
+        audioRef.current.currentTime = Math.max(audioRef.current.currentTime - skipTime, 0);
+      });
+      navigator.mediaSession.setActionHandler("seekforward", (event) => {
+        const skipTime = event.seekOffset || 10;
+        audioRef.current.currentTime = Math.min(audioRef.current.currentTime + skipTime, audioRef.current.duration);
+      });
+    }
+  }, [playSong, pauseSong, nextSong, prevSong, audioRef]);
+  // --- END OF NEW CODE ---
+
   if (isLoading) {
     return (
       <div id="splash-screen">
@@ -854,7 +894,6 @@ function AppContent() {
             </div>
           )
         } />
-        {/* FIX: Pass featuredLists and the play function as props */}
         <Route path="/featured/:listId" element={
             <SongListViewer featuredLists={featuredLists} playSongFromList={(songs, songIndex) => {
               setSongList(songs);
@@ -895,6 +934,8 @@ function AppContent() {
           isPlaying={isPlaying}
           playSong={playSong}
           pauseSong={pauseSong}
+          nextSong={nextSong}
+          prevSong={prevSong}
           setActiveView={() => navigate("/player")}
         />
       )}
