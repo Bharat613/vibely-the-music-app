@@ -785,9 +785,11 @@ body {
 }
 .profile-button{
   background: none;
-  color: white;
+  color: #07f35e;
   border: none;
-  box-shadow: 0 0 20px #0f7a36;
+  box-shadow: 0 0 20px #69f99e;
+  height: 24px;
   border-radius: 50%;
   padding: 0 !important;
 }
+
