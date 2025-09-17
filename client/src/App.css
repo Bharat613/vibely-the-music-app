@@ -183,7 +183,7 @@ body {
 }
 
 .song-item h4 {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 400;
   color: var(--text-color);
   white-space: nowrap;

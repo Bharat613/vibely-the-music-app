@@ -102,8 +102,8 @@ const Home = ({
 
           {otherPlaylists.map((playlist, index) => (
             playlist && (
-              <div key={index} className="playlist-card">
-                <div className="playlist-card-image" onClick={() => onPlaylistClick(playlist)}>
+              <div key={index} className="playlist-card" onClick={() => onPlaylistClick(playlist)}>
+                <div className="playlist-card-image" >
                   {playlist.songs && playlist.songs.length > 0 && playlist.songs[0] ? (
                     <img src={playlist.songs[0].image || ''} alt={playlist.name || 'Playlist Image'} />
                   ) : (
