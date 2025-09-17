@@ -56,8 +56,6 @@ function AppContent() {
     { name: 'Anirudh Ravichander', query: 'Anirudh Ravichander songs', image: '/images/anirudh-art.jpg' },
     { name: 'Anurag Kulkarni', query: 'Anurag Kulkarni songs', image: '/images/anuragkulkarni-art.jpg' },
         { name: 'Sid Sriram', query: 'Sid Sriram songs', image: '/images/sidsriram-art.jpg' },
-    { name: 'Shreya Ghoshal', query: 'Shreya Ghoshal songs', image: '/images/shreyaghoshal-art.jpg' },
-    
     { name: 'K. S. Chithra', query: 'K. S. Chithra songs', image: '/images/chithra-art.jpg' },
   ];
 
