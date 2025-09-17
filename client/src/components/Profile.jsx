@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaSignOutAlt, FaHome } from "react-icons/fa";
+import { FaSignOutAlt, FaHome, FaInfoCircle } from "react-icons/fa";
 import "./Profile.css";
 
 const getUsernameFromEmail = (email) => {
@@ -12,7 +12,55 @@ const Profile = ({ currentUser, handleLogout }) => {
   const navigate = useNavigate();
   const username = getUsernameFromEmail(currentUser?.email);
 
-  // Default profile picture path
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [installInstructions, setInstallInstructions] = useState({});
+
+  useEffect(() => {
+    const getBrowserInstructions = () => {
+      let title = "📲 Install Vibely";
+      let instructions = "";
+      
+      const userAgent = navigator.userAgent;
+
+      // Detect Chrome on mobile/desktop
+      if (userAgent.match(/Chrome/i)) {
+        instructions = (
+          <>
+            Open the <strong>Chrome menu (⋮)</strong> and select <strong>"Add to Home screen"</strong> (on mobile) or <strong>"Install app"</strong> (on desktop).
+          </>
+        );
+      }
+      // Detect Safari on iOS
+      else if (userAgent.match(/iPhone|iPad|iPod/i) && userAgent.match(/Safari/i) && !userAgent.match(/Chrome/i)) {
+        instructions = (
+          <>
+            Tap the <strong>Share button</strong> <img src="/images/share-icon.png" alt="Share Icon" className="inline-icon" /> at the bottom of the screen, then select <strong>"Add to Home Screen"</strong>.
+          </>
+        );
+      }
+      // Detect Firefox
+      else if (userAgent.match(/Firefox/i)) {
+        instructions = (
+          <>
+            Open the <strong>Firefox menu (☰)</strong> and select <strong>"Install"</strong> or <strong>"Add to Home screen"</strong>.
+          </>
+        );
+      }
+      // Fallback for other browsers
+      else {
+        instructions = "Your browser may not support PWA installation. Please try with Chrome or Safari.";
+      }
+
+      setInstallInstructions({ title, instructions });
+    };
+
+    getBrowserInstructions();
+  }, []);
+
+  const toggleInstallGuide = () => {
+    setShowInstallGuide(!showInstallGuide);
+  };
+
   const defaultProfilePic = "/images/profile1.png";
 
   return (
@@ -41,9 +89,18 @@ const Profile = ({ currentUser, handleLogout }) => {
         </div>
 
         <div className="profile-options">
-          {/* Other profile options can go here */}
-           <p><strong>Plan:</strong> Free Tier</p>
-           
+          <p><strong>Plan:</strong> Free Tier</p>
+          
+          <button onClick={toggleInstallGuide} className="install-guide-toggle-button">
+            <FaInfoCircle /> {showInstallGuide ? "Hide" : "Show"} Installation Guide
+          </button>
+
+          {showInstallGuide && (
+            <div className="install-guide">
+              <h4>{installInstructions.title}</h4>
+              <p>{installInstructions.instructions}</p>
+            </div>
+          )}
         </div>
 
         <button className="logout-button" onClick={handleLogout}>

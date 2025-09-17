@@ -34,7 +34,7 @@ body {
 .profile-header {
   width: 100%;
   display: flex;
-  flex-direction: column; /* stack items vertically */
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
@@ -43,13 +43,13 @@ body {
 }
 
 .back-button {
-  align-self: flex-start; /* push button to top-left */
+  align-self: flex-start;
   background: none;
   border: none;
   color: var(--subtle-text);
   font-size: 1.8rem;
   cursor: pointer;
-  padding: 0.5rem 1rem; /* make it clickable */
+  padding: 0.5rem 1rem;
   transition: color 0.2s ease-in-out;
 }
 
@@ -58,7 +58,7 @@ body {
 }
 
 .profile-header h2 {
-  margin-top: 0.5rem; /* spacing below button */
+  margin-top: 0.5rem;
   font-size: clamp(1.5rem, 5vw, 2.2rem);
   font-weight: 700;
   background: linear-gradient(90deg, #1ed760, #0f7a36);
@@ -116,6 +116,74 @@ body {
   font-size: 0.95rem;
 }
 
+.profile-options {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+/* Styles for the new button */
+.install-guide-toggle-button {
+  width: 100%;
+  background-color: transparent;
+  color: var(--subtle-text);
+  border: 2px solid var(--subtle-text);
+  padding: 0.8rem 2rem;
+  border-radius: 50px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.install-guide-toggle-button:hover {
+  background-color: var(--subtle-text);
+  color: var(--secondary-bg);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Styles for the installation guide container */
+.install-guide {
+  background-color: var(--tertiary-bg);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--dark-gray);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  animation: fadeIn 0.5s ease-out;
+  text-align: justify;
+}
+
+.install-guide h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.install-guide p {
+  font-size: 0.9rem;
+  color: var(--subtle-text);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* New style for the inline icon */
+.inline-icon {
+  height: 1.1em;
+  width: auto;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
 .logout-button {
   background: linear-gradient(45deg, #1DB954, #1ed760);
   color: var(--text-color);
@@ -150,16 +218,12 @@ body {
   text-align: center;
 }
 
-/* Mobile Responsiveness */
 @media (max-width: 600px) {
   .profile-content {
     padding: 2rem 1rem;
   }
 
   .profile-header {
-    padding-left: 0; /* reset, since stacked layout */
+    padding-left: 0;
   }
-}
-.profile-options{
-    margin-bottom: 20px;
 }
