@@ -775,11 +775,20 @@ body {
 }
 }
 .fa-backward{
-  padding: 10px;
+  padding: 0px;
+  
+    background-color: #07a021;
+    color: white;
+    border-radius:5px;
+    padding: 5px;
+
 }
 .back-button{
   border-radius: 20%;
   margin-top: 20px;
+
+  
+
 }
 
 /* Add this to the top of your App.css */

@@ -49,7 +49,7 @@ body {
   color: var(--subtle-text);
   font-size: 1.8rem;
   cursor: pointer;
-  padding: 0.5rem 1rem;
+  margin-top: 30px;
   transition: color 0.2s ease-in-out;
 }
 
