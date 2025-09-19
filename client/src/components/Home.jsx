@@ -36,11 +36,14 @@ const Home = ({
   featuredLists,
   onFeaturedListClick,
   famousSingers,
-  onSingerClick
+  onSingerClick,
+  famousMusicDirectors, // <--- Add this prop
+  onDirectorClick, // <--- Add this prop
 }) => {
   const safePlaylists = playlists || [];
   const safeFeaturedLists = featuredLists || [];
   const safeFamousSingers = famousSingers || [];
+  const safeFamousMusicDirectors = famousMusicDirectors || []; // <--- Ensure a safe array
 
   const likedSongs = safePlaylists.find(p => p.name === "Liked Songs");
   const otherPlaylists = safePlaylists.filter(p => p.name !== "Liked Songs");
@@ -48,7 +51,6 @@ const Home = ({
 
   return (
     <div className="home-screen">
-
       <SongSection
         title="Trending Songs"
         songs={trendingSongs}
@@ -74,7 +76,29 @@ const Home = ({
           </div>
         </div>
       )}
-
+      
+      {/* NEW SECTION FOR FAMOUS MUSIC DIRECTORS */}
+      {safeFamousMusicDirectors.length > 0 && (
+        <div className="section famous-singers-section">
+          <h2 className="section-title">Famous Music Directors</h2>
+          <div className="song-list">
+            {safeFamousMusicDirectors.map((director, index) => (
+              director && (
+                <div
+                  key={`director-${index}`}
+                  className="song-item"
+                  onClick={() => onDirectorClick(director)}
+                >
+                  <img src={director.image || '/images/default-director-art.png'} alt={director.name || 'Director Image'} />
+                  <h4>{director.name || 'Unknown Director'}</h4>
+                </div>
+              )
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* EXISTING SECTION FOR FAMOUS SINGERS */}
       {safeFamousSingers.length > 0 && (
         <div className="section famous-singers-section">
           <h2 className="section-title">Famous Singers</h2>
