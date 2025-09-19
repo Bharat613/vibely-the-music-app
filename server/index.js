@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
 require('dotenv').config();
 
 const app = express();
@@ -11,6 +10,9 @@ const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 app.use(cors());
+
+const trendingSongsList = require('./data/trendingSongsData.js');
+
 
 mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
@@ -78,47 +80,7 @@ app.post('/api/login', async (req, res) => {
 
 // ... existing imports (express, fetch, cors, etc.)
 
-// A simple static list of trending songs on the server
-// You can manually update this list without changing the frontend
-const trendingSongsList = [
-     {
-    title:'Bombay Ki Raanu',
-    movie:'Private Song',
-    image:'https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/82/40/8a/82408aa6-8d15-bd9d-bcd4-9819b2c3e012/cover.jpg/500x500bb.jpg',
-    url:process.env.SONG_URL_BOMBAY,
-  },
-  {
-    title: 'Kurchi Madathapetti',
-    movie: 'Guntur Kaaram',
-    image: 'https://upload.wikimedia.org/wikipedia/en/5/5e/Kurchi_Madathapetti.jpg',
-    url: process.env.SONG_URL_KURCHI, // Reference the new env variable
-  },
-  {
-    title: 'Nijame Ne Chebutunna',
-    movie: 'Ooru Peru Bhairavakona',
-    image: 'https://i.scdn.co/image/ab67616d0000b2731e5af7c5265c7ce91982b418',
-    url: process.env.SONG_URL_NIJAME, // Reference the new env variable
-  },
-  {
-    title: 'Samayama',
-    movie: 'Hi Nanna',
-    image: 'https://c.saavncdn.com/307/Samayama-From-Hi-Nanna-Telugu-2023-20230918164922-500x500.jpg',
-    url: process.env.SONG_URL_SAMAYAMA, // Reference the new env variable
-  },
-  {
-    title: 'Pushpa Pushpa',
-    movie: 'Pushpa 2: The Rule',
-    image: 'https://c.saavncdn.com/601/Pushpa-Pushpa-From-Pushpa-2-The-Rule-Telugu-Telugu-2024-20240501161044-500x500.jpg',
-    url: process.env.SONG_URL_PUSHPA, // Reference the new env variable
-  },
-  {
-    title: 'Koyila',
-    movie: '',
-    image: 'https://c.saavncdn.com/957/Koyila-Telugu-2025-20250522020441-500x500.jpg',
-    url: process.env.SONG_URL_KOYILA, // Reference the new env variable
-  },
- 
-];
+
 
 // Existing endpoint to provide trending songs
 app.get('/api/trending', (req, res) => {
