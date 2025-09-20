@@ -6,7 +6,7 @@
 .song-list-viewer-container {
     padding: 0px;
     max-width: 900px;
-    
+    padding-bottom: 70px;
     
     color: #e0e0e0;
     font-family: 'Poppins', sans-serif;
@@ -109,6 +109,7 @@
 @media (min-width: 768px) and (max-width: 1024px) {
     .song-list-viewer-container {
         padding: 30px;
+        padding-bottom: 70px;
     }
     .back-button {
         font-size: 22px;
@@ -144,6 +145,7 @@
         padding: 0px;
         margin: 0 auto;
         width: 1000px;
+        padding-bottom: 70px;
     }
     .back-button {
         font-size: 24px;
