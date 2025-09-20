@@ -315,7 +315,7 @@ function AppContent() {
       });
       const data = await response.json();
       if (data.success) {
-        toast.success(data.msg);
+        // toast.success(data.msg);
         setIsLoggedIn(true);
         setCurrentUser(data.user);
         localStorage.setItem("userToken", data.token);
@@ -405,7 +405,7 @@ function AppContent() {
       const data = await response.json();
       if (data.success) {
         fetchPlaylists(currentUser.email);
-        toast.success("Song added!");
+        // toast.success("Song added!");
         return true;
       } else {
         toast.error("Failed to add song: " + data.msg);
@@ -435,7 +435,7 @@ function AppContent() {
       });
       const data = await response.json();
       if (data.success) {
-        toast.success(data.msg);
+        // toast.success(data.msg);
         setPlaylists(prevPlaylists => {
           const updatedPlaylists = prevPlaylists.map(playlist => {
             if (playlist.name === playlistName) {
@@ -610,7 +610,7 @@ function AppContent() {
 
       const data = await response.json();
       if (data.success) {
-        toast.success(data.msg);
+        // toast.success(data.msg);
         setPlaylists(prevPlaylists =>
           prevPlaylists.filter(p => p.name !== playlistToDelete.name)
         );
@@ -702,7 +702,7 @@ function AppContent() {
       });
       const data = await response.json();
       if (data.success) {
-        toast.success(`Playlist '${newPlaylistName}' created!`);
+        // toast.success(`Playlist '${newPlaylistName}' created!`);
         await fetchPlaylists(currentUser.email);
         return true;
       } else {
