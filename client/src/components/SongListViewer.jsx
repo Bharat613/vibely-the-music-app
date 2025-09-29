@@ -37,7 +37,7 @@ const SongListViewer = ({ list, playSongFromList, onDeleteSong, isUserPlaylist }
                 <img src={song.image || ''} alt={song.title || 'Song Image'} />
                 <div className="playlist-info">
                   <h4>{song.title || 'Unknown Title'}</h4>
-                  <p>{song.artist || 'Unknown Artist'}</p>
+                  <p>{song.album || 'Unknown Artist'}</p>
                 </div>
               </div>
               {isUserPlaylist && (

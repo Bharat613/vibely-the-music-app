@@ -50,7 +50,6 @@ body {
   transition: background 0.2s;
   z-index: 20;
   color: #1DB954;
-  
 }
 .player-home-button:hover {
   background: var(--tertiary-bg);
@@ -76,7 +75,7 @@ body {
 /* Top buttons (like & share) */
 .player-top-buttons {
   position: absolute;
-  top: px;
+  top: var(--spacing-unit);
   right: 25px;
   display: flex;
   gap: 0.6rem;
@@ -98,7 +97,7 @@ body {
   margin-top: 0.4rem;
 }
 .player-song-album {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--subtle-text);
   font-style: italic;
 }
@@ -251,24 +250,34 @@ body {
   color: var(--subtle-text);
   margin: 0;
 }
+.suggestions-list {
+ display: flex;
+ flex-direction: column;
+ gap: 0.6rem;
+ max-height: 70vh;
+ overflow-y: auto;
+ /* HIDE SCROLLBAR STYLES */
+  scrollbar-width: none; /* For Firefox */
+}
+/* HIDE SCROLLBAR STYLES for Webkit browsers (Chrome, Safari, Edge) */
+.suggestions-list::-webkit-scrollbar {
+ width: 0px; /* Hide the scrollbar area */
+ background: transparent; /* Make the background transparent */
+}
 
-/* Desktop layout (side by side) */
 /* Desktop layout (side by side) */
 @media (min-width: 900px) {
   .player-container {
     flex-direction: row;
     align-items: flex-start;
     justify-content: center;
-    /* gap: calc(var(--spacing-unit) * 2.5); */
-    
     margin: auto;
-    width: 1400px;
-    margin-left: 50px;
-    /* padding: calc(var(--spacing-unit) * 2); */
+    width: 100%;
+    padding: 0;
   }
-.player-home-button {
-color: #fff;
-}
+  .player-home-button {
+    color: #fff;
+  }
   /* Player section more focused */
   .player-content {
     flex: 2;
@@ -278,7 +287,7 @@ color: #fff;
     display: flex;
     flex-direction: column;
     align-items: center;
-
+    
   }
 
   /* Album image centered but smaller */
@@ -294,13 +303,13 @@ color: #fff;
     margin-bottom: calc(var(--spacing-unit) * 1.5);
   }
   .player-song-title {
-    font-size: 2rem;
+    font-size: 1.5rem;
   }
   .player-song-artist {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
   }
   .player-song-album {
-    font-size: 1rem;
+    font-size: 0.8rem;
   }
 
   /* Controls more compact */
@@ -325,10 +334,12 @@ color: #fff;
   /* Related songs neatly aligned on right */
   .related-songs-container {
     flex: 1.2;
-    max-height: 85vh;
+    max-height: 89vh;
     overflow-y: auto;
     padding: calc(var(--spacing-unit) * 1.5);
     border-radius: var(--border-radius);
+  margin-right: 50px;
+
   }
   .related-songs-title {
     font-size: 1.3rem;
@@ -348,16 +359,28 @@ color: #fff;
   .suggestion-artist {
     font-size: 0.9rem;
   }
+.suggestions-list {
+ display: flex;
+ flex-direction: column;
+ gap: 0.6rem;
+ max-height: 70vh;
+ overflow-y: auto;
+ /* HIDE SCROLLBAR STYLES */
+  scrollbar-width: none; /* For Firefox */
+}
+/* HIDE SCROLLBAR STYLES for Webkit browsers (Chrome, Safari, Edge) */
+.suggestions-list::-webkit-scrollbar {
+ width: 0px; /* Hide the scrollbar area */
+ background: transparent; /* Make the background transparent */
+}
 }
 
-.share-button{
+/* Share & Like */
+.share-button {
   color: #1DB954;
 }
-.like-button{
-  color: #f50e6a;
-
-}
 .like-button {
+  color: #f50e6a;
   background: none;
   border: none;
   cursor: pointer;
@@ -380,4 +403,15 @@ color: #fff;
   filter: drop-shadow(0 0 10px #f50e6a)
           drop-shadow(0 0 20px #f50e6a)
           drop-shadow(0 0 30px #f50e6a);
+}
+
+/* 🎧 NEW DEVICE NAME STYLING */
+.player-device-name {
+  font-size: 0.9rem;
+  color: var(--accent-color);
+  margin-top: 0.8rem;
+  font-weight: 500;
+}
+.player-device-name strong {
+  font-weight: 700;
 }

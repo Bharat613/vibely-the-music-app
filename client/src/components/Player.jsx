@@ -1,6 +1,7 @@
 // client/src/components/Player.jsx
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { FaBluetooth } from "react-icons/fa";
 import {
   FaPlay,
   FaPause,
@@ -11,7 +12,7 @@ import {
   FaShareAlt,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import './Player.css'
+import "./Player.css";
 
 const Player = ({
   audioRef,
@@ -35,6 +36,35 @@ const Player = ({
   playSongFromSuggestion,
 }) => {
   const navigate = useNavigate();
+  const [deviceName, setDeviceName] = useState("This Device");
+
+  // Try to detect connected audio output device
+  // Try to detect connected audio output device
+useEffect(() => {
+  async function detectDevice() {
+    try {
+      if (navigator.mediaDevices?.enumerateDevices) {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const outputs = devices.filter((d) => d.kind === "audiooutput");
+        if (outputs.length > 0) {
+          let fullName = outputs[0].label || "Default Audio Device";
+
+          // Extract only text inside first parentheses
+          const match = fullName.match(/\(([^)]+)\)/);
+          if (match) {
+            setDeviceName(match[1]); // "OPPO Enco Buds2"
+          } else {
+            setDeviceName(fullName);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Could not detect audio output device:", err);
+    }
+  }
+  detectDevice();
+}, []);
+
 
   // Update Media Session Metadata
   useEffect(() => {
@@ -120,6 +150,15 @@ const Player = ({
           <h2 className="player-song-title">{currentSong?.title}</h2>
           <h3 className="player-song-artist">{currentSong?.artist}</h3>
           <p className="player-song-album">{currentSong?.album}</p>
+
+          {/* 👇 Show detected device name */}
+          {deviceName && (
+  <p className="player-device-name">
+    <FaBluetooth style={{ marginRight: "5px", color: "#08d72eff" }} />
+    <strong>{deviceName}</strong>
+  </p>
+)}
+
         </div>
 
         {/* Controls */}

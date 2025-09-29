@@ -798,42 +798,49 @@ function AppContent() {
               <>
                 <div className="top-bar">
                   <div className="search-container" ref={searchContainerRef}>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (songName) fetchSong(songName);
-                      }}
-                    >
-                      <input
-                        type="text"
-                        value={songName}
-                        onChange={handleInputChange}
-                        onFocus={() => {
-                          if (suggestions.length > 0 || songName.length > 2) {
-                            handleInputChange({ target: { value: songName } });
-                          }
-                        }}
-                        placeholder="Search songs..."
-                      />
-                      <button className="search-button" type="submit">
-                        <FaSearch />
-                      </button>
-                    </form>
-                    {suggestions.length > 0 && (
-                      <ul className="suggestions">
-                        {suggestions.map((s, i) => (
-                          <li key={i} onClick={() => {
-                            setSongName(s.title);
-                            fetchSong(s.title);
-                            setSuggestions([]);
-                          }}
-                          >
-                            {s.title}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
+  <form
+    onSubmit={(e) => {
+      e.preventDefault();
+      if (songName) {
+        fetchSong(songName); // call your function to fetch the song
+        setSongName('');     // clear the input field
+      }
+    }}
+  >
+    <input
+      type="text"
+      value={songName}
+      onChange={handleInputChange}
+      onFocus={() => {
+        if (suggestions.length > 0 || songName.length > 2) {
+          handleInputChange({ target: { value: songName } });
+        }
+      }}
+      placeholder="Search songs..."
+    />
+    <button className="search-button" type="submit">
+      <FaSearch />
+    </button>
+  </form>
+
+  {suggestions.length > 0 && (
+    <ul className="suggestions">
+      {suggestions.map((s, i) => (
+        <li
+          key={i}
+          onClick={() => {
+            fetchSong(s.title);   // fetch the selected song
+            setSongName('');       // clear the input field
+            setSuggestions([]);    // hide suggestions
+          }}
+        >
+          {s.title}
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
+
                   <button onClick={() => navigate("/profile")} className="profile-button">
                     <FaUserCircle size={24} />
                   </button>
