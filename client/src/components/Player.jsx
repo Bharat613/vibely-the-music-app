@@ -46,24 +46,27 @@ useEffect(() => {
       if (navigator.mediaDevices?.enumerateDevices) {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const outputs = devices.filter((d) => d.kind === "audiooutput");
-        if (outputs.length > 0) {
-          let fullName = outputs[0].label || "Default Audio Device";
 
-          // Extract only text inside first parentheses
+        if (outputs.length > 0) {
+          // Use label if available, fallback to generic name
+          const fullName = outputs[0].label || "This Device";
+
+          // Optional: Extract text inside parentheses if present
           const match = fullName.match(/\(([^)]+)\)/);
-          if (match) {
-            setDeviceName(match[1]); // "OPPO Enco Buds2"
-          } else {
-            setDeviceName(fullName);
-          }
+          setDeviceName(match ? match[1] : fullName);
+        } else {
+          setDeviceName("This Device");
         }
       }
     } catch (err) {
       console.warn("Could not detect audio output device:", err);
+      setDeviceName("This Device");
     }
   }
+
   detectDevice();
 }, []);
+
 
 
   // Update Media Session Metadata
