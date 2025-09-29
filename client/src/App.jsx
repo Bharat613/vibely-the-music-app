@@ -840,7 +840,6 @@ function AppContent() {
     </ul>
   )}
 </div>
-
                   <button onClick={() => navigate("/profile")} className="profile-button">
                     <FaUserCircle size={24} />
                   </button>
