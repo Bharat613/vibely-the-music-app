@@ -67,50 +67,42 @@ const Player = ({
 //   detectDevice();
 // }, []);
 useEffect(() => {
-    async function detectDevice() {
-        try {
-            // 🛑 STEP 1: Request media permission first.
-            // Accessing the microphone is the most common way to prompt for permission.
-            // We request it, but we don't need to use the stream, so we stop it immediately.
-            let stream = null;
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            } catch (permError) {
-                // If permission is denied, we can still proceed, but names won't be available.
-                console.log("Media permission denied. Device names will be generic.");
-            }
+  async function detectDevice() {
+    let currentDeviceName = "This Device";
 
-            // 🛑 STEP 2: Enumerate devices AFTER permission has been requested.
-            if (navigator.mediaDevices?.enumerateDevices) {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                // Filter for audio output devices
-                const outputs = devices.filter((d) => d.kind === "audiooutput");
+    try {
+      if (navigator.mediaDevices?.enumerateDevices) {
 
-                if (outputs.length > 0) {
-                    // This label will now be populated if permission was granted
-                    const fullName = outputs[0].label || "This Device";
+        // Optional: request microphone permission (triggers prompt)
+        // await navigator.mediaDevices.getUserMedia({ audio: true });
 
-                    // Extract text inside parentheses, e.g., "OPPO Enco Buds2"
-                    const match = fullName.match(/\(([^)]+)\)/);
-                    setDeviceName(match ? match[1] : fullName);
-                } else {
-                    setDeviceName("This Device");
-                }
-            }
-            
-            // 🛑 STEP 3: Stop the stream if it was successfully started to release the mic.
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const outputs = devices.filter(d => d.kind === "audiooutput");
 
-        } catch (err) {
-            console.warn("Could not detect audio output device:", err);
-            setDeviceName("This Device");
+        if (outputs.length > 0) {
+          const rawLabel = outputs[0].label || outputs[0].deviceId;
+
+          if (rawLabel && rawLabel !== "default") {
+            // Best-effort parsing
+            const match = rawLabel.match(/\(([^)]+)\)/);
+            currentDeviceName = match?.[1] || rawLabel;
+          } else if (rawLabel.toLowerCase().includes("bluetooth")) {
+            currentDeviceName = "Bluetooth Headset";
+          } else {
+            currentDeviceName = "This Device";
+          }
         }
+      }
+    } catch (err) {
+      console.warn("Could not detect audio output device:", err);
     }
 
-    detectDevice();
+    setDeviceName(currentDeviceName);
+  }
+
+  detectDevice();
 }, []);
+
 
 
   // Update Media Session Metadata
