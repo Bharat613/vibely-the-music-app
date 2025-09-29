@@ -40,33 +40,77 @@ const Player = ({
 
   // Try to detect connected audio output device
   // Try to detect connected audio output device
+// useEffect(() => {
+//   async function detectDevice() {
+//     try {
+//       if (navigator.mediaDevices?.enumerateDevices) {
+//         const devices = await navigator.mediaDevices.enumerateDevices();
+//         const outputs = devices.filter((d) => d.kind === "audiooutput");
+
+//         if (outputs.length > 0) {
+//           // Use label if available, fallback to generic name
+//           const fullName = outputs[0].label || "This Device";
+
+//           // Optional: Extract text inside parentheses if present
+//           const match = fullName.match(/\(([^)]+)\)/);
+//           setDeviceName(match ? match[1] : fullName);
+//         } else {
+//           setDeviceName("This Device");
+//         }
+//       }
+//     } catch (err) {
+//       console.warn("Could not detect audio output device:", err);
+//       setDeviceName("This Device");
+//     }
+//   }
+
+//   detectDevice();
+// }, []);
 useEffect(() => {
-  async function detectDevice() {
-    try {
-      if (navigator.mediaDevices?.enumerateDevices) {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const outputs = devices.filter((d) => d.kind === "audiooutput");
+    async function detectDevice() {
+        try {
+            // 🛑 STEP 1: Request media permission first.
+            // Accessing the microphone is the most common way to prompt for permission.
+            // We request it, but we don't need to use the stream, so we stop it immediately.
+            let stream = null;
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            } catch (permError) {
+                // If permission is denied, we can still proceed, but names won't be available.
+                console.log("Media permission denied. Device names will be generic.");
+            }
 
-        if (outputs.length > 0) {
-          // Use label if available, fallback to generic name
-          const fullName = outputs[0].label || "This Device";
+            // 🛑 STEP 2: Enumerate devices AFTER permission has been requested.
+            if (navigator.mediaDevices?.enumerateDevices) {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                // Filter for audio output devices
+                const outputs = devices.filter((d) => d.kind === "audiooutput");
 
-          // Optional: Extract text inside parentheses if present
-          const match = fullName.match(/\(([^)]+)\)/);
-          setDeviceName(match ? match[1] : fullName);
-        } else {
-          setDeviceName("This Device");
+                if (outputs.length > 0) {
+                    // This label will now be populated if permission was granted
+                    const fullName = outputs[0].label || "This Device";
+
+                    // Extract text inside parentheses, e.g., "OPPO Enco Buds2"
+                    const match = fullName.match(/\(([^)]+)\)/);
+                    setDeviceName(match ? match[1] : fullName);
+                } else {
+                    setDeviceName("This Device");
+                }
+            }
+            
+            // 🛑 STEP 3: Stop the stream if it was successfully started to release the mic.
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+
+        } catch (err) {
+            console.warn("Could not detect audio output device:", err);
+            setDeviceName("This Device");
         }
-      }
-    } catch (err) {
-      console.warn("Could not detect audio output device:", err);
-      setDeviceName("This Device");
     }
-  }
 
-  detectDevice();
+    detectDevice();
 }, []);
-
 
 
   // Update Media Session Metadata
