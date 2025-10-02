@@ -62,6 +62,9 @@
   color: var(--text-color);
 }
 
+
+
+
 .playlist-card-info {
   display: flex;
   flex-direction: column;
@@ -130,7 +133,7 @@
 }
 
 .song-item h4 {
-  font-size: 1rem;
+  font-size: 0.8rem;
   text-align: center;
   margin-top: 0.5rem;
 }
