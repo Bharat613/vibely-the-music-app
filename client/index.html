@@ -2,9 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Vibely - free & uninterrupted music</title>
-<link rel="manifest" href="/manifest.json" />
+
+    <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/icons/icon-512x512.png" type="image/png">
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <link rel="apple-touch-startup-image" href="/icons/apple-splash.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
@@ -16,9 +17,83 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     />
+
+    <style>
+  /* Disable text selection & dragging */
+  * {
+    user-select: none !important;
+    -webkit-user-drag: none !important;
+  }
+
+  /* Custom dark scrollbar for Chrome, Edge, Safari */
+  body::-webkit-scrollbar {
+    width: 8px; /* Slightly bigger than 6px */
+  }
+
+  body::-webkit-scrollbar-track {
+    background: #000000; /* Black track */
+    border-radius: 6px;
+  }
+
+  body::-webkit-scrollbar-thumb {
+    background-color: #00ff00; /* Green thumb */
+    border-radius: 6px;
+    border: 2px solid #000000; /* Optional padding around thumb */
+  }
+
+  body::-webkit-scrollbar-thumb:hover {
+    background-color: #00cc00; /* Darker green on hover */
+  }
+
+  /* Remove top and bottom arrows */
+  body::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  /* Firefox scrollbar */
+  body {
+    scrollbar-width: thin;
+    scrollbar-color: #00ff00 #000000; /* thumb color | track color */
+  }
+</style>
+
   </head>
-  <body>
+  <body oncontextmenu="return false">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
+    <script>
+      // Disable right-click
+      document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+      // Disable copy, cut, paste, drag & drop
+      ["copy", "cut", "paste", "dragstart", "drop"].forEach(evt =>
+        document.addEventListener(evt, e => e.preventDefault())
+      );
+
+      // Block zoom (Ctrl/⌘ +/-, Ctrl/⌘ + scroll, pinch)
+      document.addEventListener("keydown", function (e) {
+        if ((e.ctrlKey || e.metaKey) &&
+            (e.key === "+" || e.key === "-" || e.key === "=" || e.key === "0")) {
+          e.preventDefault();
+        }
+
+        // DevTools shortcuts
+        if (e.key === "F12" || 
+            (e.ctrlKey && e.shiftKey && ["I", "J", "C"].includes(e.key.toUpperCase())) ||
+            (e.ctrlKey && e.key.toUpperCase() === "U")) {
+          e.preventDefault();
+        }
+      });
+
+      document.addEventListener("wheel", function (e) {
+        if (e.ctrlKey) e.preventDefault();
+      }, { passive: false });
+
+      // Prevent pinch zoom gesture
+      document.addEventListener("gesturestart", function (e) {
+        e.preventDefault();
+      });
+    </script>
   </body>
 </html>

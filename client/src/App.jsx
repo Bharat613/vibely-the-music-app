@@ -70,74 +70,163 @@ function AppContent() {
   const audioRef = useRef(null);
   const searchContainerRef = useRef(null);
 
-  useEffect(() => {
+  // useEffect(() => {
+  //   const storedSongList = localStorage.getItem("songList");
+  //   const storedSongIndex = localStorage.getItem("currentSongIndex");
+
+  //   if (storedSongList && storedSongIndex !== null) {
+  //     setSongList(JSON.parse(storedSongList));
+  //     setCurrentSongIndex(parseInt(storedSongIndex, 10));
+  //   }
+
+  //   const fetchTrendingSongs = async () => {
+  //     try {
+  //       const response = await fetch(`${BACKEND_URL}/api/trending`);
+  //       const data = await response.json();
+  //       if (data.success) {
+  //         setTrendingSongs(data.songs);
+  //       }
+  //     } catch (error) {
+  //       console.error("Failed to fetch trending songs:", error);
+  //     }
+  //   };
+    
+  //   const fetchFeaturedLists = async () => {
+  //     const lists = [
+  //       { name: 'Telugu Latest Songs', query: 'telugu latest songs', image: '/images/telugu-latest-art.jpg' },
+  //       { name: 'Telugu Old Songs', query: 'telugu old songs', image: '/images/telugu-old-art.jpg' },
+  //       { name: 'Best of 2024 Dance Hits', query: 'Best of telugu 2024 Dance Hits', image: '/images/best_2024.jpg' },
+  //       { name: 'Devotional Songs', query: 'telugu devotional songs', image: '/images/devotional-art.jpg' },
+  //     ];
+
+  //     const fetchedLists = await Promise.all(lists.map(async (list) => {
+  //       try {
+  //           const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(list.query)}&limit=30`);
+  //           const data = await res.json();
+  //           if (data.success && data.data?.results?.length > 0) {
+  //             const songs = data.data.results.map((song) => {
+  //                 const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
+  //                 let imageUrl = song.image?.[2]?.url || song.image?.[1]?.url || song.image?.[0]?.url;
+  //                 if (imageUrl) {
+  //                     imageUrl = imageUrl.replace('150x150', '500x500');
+  //                 }
+  //                 return {
+  //                     title: cleanedTitle,
+  //                     artist: song.primaryArtists,
+  //                     url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
+  //                     image: imageUrl || "/veebly.png",
+  //                     album: song.album?.name || "Unknown Album",
+  //                 };
+  //             });
+  //             return { ...list, id: createSlug(list.name), songs: songs };
+  //           }
+  //           return { ...list, id: createSlug(list.name), songs: [] };
+  //       } catch (err) {
+  //           console.error(`Failed to fetch songs for featured list '${list.name}':`, err);
+  //           return { ...list, id: createSlug(list.name), songs: [] };
+  //       }
+  //     }));
+  //     setFeaturedLists(fetchedLists);
+  //   };
+
+  //   fetchTrendingSongs();
+  //   fetchFeaturedLists();
+
+  //   const timer = setTimeout(() => {
+  //     setIsLoading(false);
+  //   }, 2000);
+  //   return () => clearTimeout(timer);
+  // }, []);
+useEffect(() => {
+    // 1. Load data from localStorage
     const storedSongList = localStorage.getItem("songList");
     const storedSongIndex = localStorage.getItem("currentSongIndex");
 
     if (storedSongList && storedSongIndex !== null) {
-      setSongList(JSON.parse(storedSongList));
-      setCurrentSongIndex(parseInt(storedSongIndex, 10));
+        setSongList(JSON.parse(storedSongList));
+        setCurrentSongIndex(parseInt(storedSongIndex, 10));
     }
 
+    // 2. Define the async function to fetch trending songs
     const fetchTrendingSongs = async () => {
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/trending`);
-        const data = await response.json();
-        if (data.success) {
-          setTrendingSongs(data.songs);
+        try {
+            const response = await fetch(`${BACKEND_URL}/api/trending`);
+            const data = await response.json();
+            if (data.success) {
+                setTrendingSongs(data.songs);
+            }
+        } catch (error) {
+            console.error("Failed to fetch trending songs:", error);
         }
-      } catch (error) {
-        console.error("Failed to fetch trending songs:", error);
-      }
     };
     
+    // 3. Define the async function to fetch featured lists
     const fetchFeaturedLists = async () => {
-      const lists = [
-        { name: 'Telugu Latest Songs', query: 'telugu latest songs', image: '/images/telugu-latest-art.jpg' },
-        { name: 'Telugu Old Songs', query: 'telugu old songs', image: '/images/telugu-old-art.jpg' },
-        { name: 'Best of 2024 Dance Hits', query: 'Best of telugu 2024 Dance Hits', image: '/images/best_2024.jpg' },
-        { name: 'Devotional Songs', query: 'telugu devotional songs', image: '/images/devotional-art.jpg' },
-      ];
+        const lists = [
+            { name: 'Telugu Latest Songs', query: 'telugu latest songs', image: '/images/telugu-latest-art.jpg' },
+            { name: 'Telugu Old Songs', query: 'telugu old songs', image: '/images/telugu-old-art.jpg' },
+            { name: 'Best of 2024 Dance Hits', query: 'Best of telugu 2024 Dance Hits', image: '/images/best_2024.jpg' },
+            { name: 'Devotional Songs', query: 'telugu devotional songs', image: '/images/devotional-art.jpg' },
+        ];
 
-      const fetchedLists = await Promise.all(lists.map(async (list) => {
-        try {
-            const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(list.query)}&limit=30`);
-            const data = await res.json();
-            if (data.success && data.data?.results?.length > 0) {
-              const songs = data.data.results.map((song) => {
-                  const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
-                  let imageUrl = song.image?.[2]?.url || song.image?.[1]?.url || song.image?.[0]?.url;
-                  if (imageUrl) {
-                      imageUrl = imageUrl.replace('150x150', '500x500');
-                  }
-                  return {
-                      title: cleanedTitle,
-                      artist: song.primaryArtists,
-                      url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
-                      image: imageUrl || "/veebly.png",
-                      album: song.album?.name || "Unknown Album",
-                  };
-              });
-              return { ...list, id: createSlug(list.name), songs: songs };
+        // This map and Promise.all performs concurrent fetching for all lists
+        const fetchedLists = await Promise.all(lists.map(async (list) => {
+            try {
+                // Ensure SAAVN_API_URL is available in scope
+                const res = await fetch(`${SAAVN_API_URL}/search/songs?query=${encodeURIComponent(list.query)}&limit=30`);
+                const data = await res.json();
+                
+                if (data.success && data.data?.results?.length > 0) {
+                    const songs = data.data.results.map((song) => {
+                        // ... (song mapping logic) ...
+                        const cleanedTitle = song.name.replace(/\s*\(.*?\)|\[.*?\]/g, "").trim();
+                        let imageUrl = song.image?.[2]?.url || song.image?.[1]?.url || song.image?.[0]?.url;
+                        if (imageUrl) {
+                            imageUrl = imageUrl.replace('150x150', '500x500');
+                        }
+                        return {
+                            title: cleanedTitle,
+                            artist: song.primaryArtists,
+                            url: song.downloadUrl?.[2]?.url || song.downloadUrl?.[1]?.url || song.downloadUrl?.[0]?.url,
+                            image: imageUrl || "/veebly.png",
+                            album: song.album?.name || "Unknown Album",
+                        };
+                    });
+                    // Ensure createSlug is available in scope
+                    return { ...list, id: createSlug(list.name), songs: songs };
+                }
+                return { ...list, id: createSlug(list.name), songs: [] };
+            } catch (err) {
+                console.error(`Failed to fetch songs for featured list '${list.name}':`, err);
+                return { ...list, id: createSlug(list.name), songs: [] };
             }
-            return { ...list, id: createSlug(list.name), songs: [] };
-        } catch (err) {
-            console.error(`Failed to fetch songs for featured list '${list.name}':`, err);
-            return { ...list, id: createSlug(list.name), songs: [] };
-        }
-      }));
-      setFeaturedLists(fetchedLists);
+        }));
+        setFeaturedLists(fetchedLists);
     };
 
-    fetchTrendingSongs();
-    fetchFeaturedLists();
+    // 4. Combined Initialization Function
+    const initializeData = async () => {
+        try {
+            // Wait for both fetch operations to complete
+            await Promise.all([
+                fetchTrendingSongs(),
+                fetchFeaturedLists(),
+                // OPTIONAL: Add a minimum delay for smoother loading screen UX (e.g., 1000ms)
+                new Promise(resolve => setTimeout(resolve, 1000))
+            ]);
+        } catch (error) {
+            console.error("Error during data initialization:", error);
+        } finally {
+            // Set loading to false ONLY after all promises resolve (or one fails)
+            setIsLoading(false);
+        }
+    };
 
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, []);
+    // Start the process
+    initializeData();
 
+    // No return cleanup needed for the timer anymore, as it's not external to the promises.
+}, []);
   useEffect(() => {
     const token = localStorage.getItem("userToken");
     if (token && location.pathname === "/auth") {
@@ -768,7 +857,9 @@ function AppContent() {
     navigate("/player");
   };
 
+
   if (isLoading) {
+    
     return (
       <div id="splash-screen">
         <img src="/icons/icon-512x512.png" alt="Vibely Logo" className="splash-logo" />
